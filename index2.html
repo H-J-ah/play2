@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>열공 너구리 - 공유 공부기록</title>
+
+  <!-- PWA 메타태그 & 아이콘 -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="열공너구리" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Apple SD Gothic Neo', 'Noto Sans KR', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { overscroll-behavior-y: none; }
+
+    /* 상단 공지 무한 슬라이드 */
+    .marquee-wrap {
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+    .marquee-track {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: marquee-scroll 14s linear infinite;
+      will-change: transform;
+    }
+    .marquee-track.paused {
+      animation-play-state: paused;
+    }
+    @keyframes marquee-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* 이모지/버튼 터치 피드백 */
+    .tap-pop {
+      transition: transform 0.12s ease, opacity 0.15s ease;
+    }
+    .tap-pop:active {
+      transform: scale(0.88);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- 상단 공지 전광판 -->
+  <div class="sticky top-0 z-30 bg-indigo-600 dark:bg-indigo-900 text-white shadow-sm">
+    <div class="max-w-md mx-auto flex items-center gap-2 px-3 py-2">
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 shrink-0">📢 공지</span>
+
+      <div id="marqueeWrap" class="marquee-wrap flex-1 min-w-0 h-6 flex items-center" title="터치해서 멈춤/재생">
+        <div id="marqueeTrack" class="marquee-track text-sm font-medium"></div>
+      </div>
+
+      <button id="btnOpenNoticeWrite" type="button"
+        class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 transition">
+        쓰기
+      </button>
+      <button id="btnOpenNoticeHistory" type="button"
+        class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition">
+        기록
+      </button>
+    </div>
+  </div>
+
+  <!-- 메인 컨테이너 -->
+  <main class="max-w-md mx-auto px-4 pt-4 pb-10 space-y-4">
+
+    <!-- 헤더: 앱 타이틀 + 동기화 상태 + 다크모드 -->
+    <header class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <img src="./icon-192.png" alt="열공 너구리" class="w-9 h-9 rounded-xl shadow-sm object-cover bg-indigo-100" />
+        <div>
+          <h1 class="text-base font-bold leading-tight tracking-tight">열공 너구리</h1>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="syncLabel" class="text-[11px] text-slate-500 dark:text-slate-400">로컬 저장</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="btnThemeToggle" type="button" aria-label="테마 전환"
+        class="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-sm tap-pop">
+        🌙
+      </button>
+    </header>
+
+    <!-- 날짜 선택 바 -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+      <button id="btnPrevDate" type="button"
+        class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+        ‹
+      </button>
+      <div class="flex items-center gap-2">
+        <span id="dateDisplay" class="text-sm font-bold tracking-tight"></span>
+        <button id="btnToday" type="button"
+          class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
+          오늘
+        </button>
+      </div>
+      <button id="btnNextDate" type="button"
+        class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+        ›
+      </button>
+    </section>
+
+    <!-- 1. 오늘 들은 강의 수 -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-bold">오늘 들은 강의 수</h2>
+          <span id="lectureCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+            0 / 5강
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[11px] text-slate-400">목표</span>
+          <button id="btnGoalMinus" type="button"
+            class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
+            -
+          </button>
+          <span id="lectureGoalText" class="text-xs font-bold w-4 text-center">5</span>
+          <button id="btnGoalPlus" type="button"
+            class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
+            +
+          </button>
+        </div>
+      </div>
+
+      <div id="lectureGrid" class="flex flex-wrap gap-2"></div>
+    </section>
+
+    <!-- 2. 오늘 총 공부 시간 & 스톱워치 -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-bold">오늘 총 공부 시간</h2>
+        <button id="btnToggleStopwatch" type="button"
+          class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          ⏱️ 스톱워치
+        </button>
+      </div>
+
+      <div class="flex items-baseline justify-between mb-3">
+        <div id="studyTimeDisplay" class="text-2xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
+          0시간 00분
+        </div>
+        <button id="btnDirectTime" type="button"
+          class="text-xs font-medium text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-indigo-500">
+          직접 입력
+        </button>
+      </div>
+
+      <div class="grid grid-cols-4 gap-1.5">
+        <button data-add-min="10" type="button"
+          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+          +10분
+        </button>
+        <button data-add-min="30" type="button"
+          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+          +30분
+        </button>
+        <button data-add-min="60" type="button"
+          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+          +1시간
+        </button>
+        <button data-add-min="-10" type="button"
+          class="btn-add-time py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
+          -10분
+        </button>
+      </div>
+
+      <!-- 접이식 스톱워치 -->
+      <div id="stopwatchBox" class="hidden mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">실시간 측정</span>
+          <span id="swDisplay" class="font-mono text-lg font-bold tracking-wider">00:00:00</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button id="btnSwToggle" type="button"
+            class="py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop">
+            시작
+          </button>
+          <button id="btnSwReset" type="button"
+            class="py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
+            초기화
+          </button>
+          <button id="btnSwApply" type="button"
+            class="py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold tap-pop">
+            시간 반영
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 오늘 공부 평가 -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <h2 class="text-sm font-bold">오늘 공부 평가</h2>
+
+      <!-- 잘한 점 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+            잘한 점 <span id="goodScoreText">0</span>/5
+          </span>
+          <div id="goodThumbs" class="flex items-center gap-1 shrink-0"></div>
+        </div>
+        <input id="goodReasonInput" type="text" maxlength="100" placeholder="잘했던 이유를 간단히 적어보세요"
+          class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+      </div>
+
+      <div class="border-t border-slate-100 dark:border-slate-800"></div>
+
+      <!-- 아쉬웠던 점 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-rose-500 dark:text-rose-400 whitespace-nowrap shrink-0">
+            아쉬웠던 점 <span id="badScoreText">0</span>/5
+          </span>
+          <div id="badThumbs" class="flex items-center gap-1 shrink-0"></div>
+        </div>
+        <input id="badReasonInput" type="text" maxlength="100" placeholder="아쉬웠던 이유를 간단히 적어보세요"
+          class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+      </div>
+    </section>
+
+    <!-- 4. 내일 먹고 싶은 음식 -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+      <h2 class="text-sm font-bold">🍽️ 내일 먹고 싶은 음식</h2>
+
+      <form id="foodForm" class="flex gap-2">
+        <input id="foodInput" type="text" maxlength="30" placeholder="예: 마라탕, 크로플, 국밥..."
+          class="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <button type="submit"
+          class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shrink-0 tap-pop">
+          추가
+        </button>
+      </form>
+
+      <div id="foodList" class="flex flex-wrap gap-1.5 empty:hidden"></div>
+    </section>
+
+  </main>
+
+  <!-- 모달: 공지 쓰기 -->
+  <div id="modalNoticeWrite" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-200 dark:border-slate-800 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold">📢 한 줄 공지 남기기</h3>
+        <button type="button" data-close-modal="modalNoticeWrite" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+      </div>
+      <input id="noticeInput" type="text" maxlength="80" placeholder="공지 메시지를 입력하세요"
+        class="w-full px-3 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <div class="flex justify-end gap-2">
+        <button type="button" data-close-modal="modalNoticeWrite"
+          class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          취소
+        </button>
+        <button id="btnSaveNotice" type="button"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white tap-pop">
+          등록
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 모달: 공지 기록 -->
+  <div id="modalNoticeHistory" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-200 dark:border-slate-800 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold">📜 이전 공지 기록</h3>
+        <button type="button" data-close-modal="modalNoticeHistory" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+      </div>
+      <div id="noticeHistoryList" class="max-h-72 overflow-y-auto space-y-2 pr-0.5"></div>
+      <div class="flex justify-end">
+        <button type="button" data-close-modal="modalNoticeHistory"
+          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 모달: 공부 시간 직접 입력 -->
+  <div id="modalDirectTime" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xl border border-slate-200 dark:border-slate-800 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold">공부 시간 직접 입력</h3>
+        <button type="button" data-close-modal="modalDirectTime" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] text-slate-500 mb-1">시간</label>
+          <input id="directHoursInput" type="number" min="0" max="24" value="0"
+            class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
+        </div>
+        <div>
+          <label class="block text-[11px] text-slate-500 mb-1">분</label>
+          <input id="directMinsInput" type="number" min="0" max="59" value="0"
+            class="w-full px-3 py-2 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" data-close-modal="modalDirectTime"
+          class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+          취소
+        </button>
+        <button id="btnSaveDirectTime" type="button"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white tap-pop">
+          저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (실시간 공유용) -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getDatabase, ref, onValue, set } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+    // =========================================================================
+    // [실시간 공유 설정]
+    // 친구와 실시간으로 동기화하려면 아래 FIREBASE_CONFIG에 본인 프로젝트 값을 채워주세요.
+    // 비워두면 브라우저 로컬 저장소(localStorage) 모드로 자동 동작합니다.
+    // =========================================================================
+    const FIREBASE_CONFIG = {
+      apiKey: "",
+      authDomain: "",
+      databaseURL: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+    const ROOM_ID = "study-room-1109"; // 친구와 같은 방 이름 사용
+    // =========================================================================
+
+    const LOCAL_KEY = `study_raccoon_data_${ROOM_ID}`;
+    const THEME_KEY = 'study_raccoon_theme';
+
+    let dbRef = null;
+    let isFirebaseReady = false;
+
+    let appState = {
+      notices: [],
+      days: {}
+    };
+
+    let currentDateStr = getTodayStr();
+    let isMarqueePaused = false;
+    let swTimer = null;
+    let swElapsedSec = 0;
+    let reasonDebounce = null;
+
+    const FOOD_COLORS = [
+      'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
+      'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200',
+      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200',
+      'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200',
+      'bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200'
+    ];
+
+    function getTodayStr() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function shiftDate(dateStr, deltaDays) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d + deltaDays);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatDateKorean(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+      return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} (${weekdays[dt.getDay()]})`;
+    }
+
+    function getDayData(dateStr) {
+      if (!appState.days) appState.days = {};
+      if (!appState.days[dateStr]) {
+        appState.days[dateStr] = {
+          lectureGoal: 5,
+          lectureDone: 0,
+          studyMinutes: 0,
+          goodScore: 0,
+          goodReason: '',
+          badScore: 0,
+          badReason: '',
+          foods: []
+        };
+      }
+      const d = appState.days[dateStr];
+      if (!Array.isArray(d.foods)) d.foods = [];
+      return d;
+    }
+
+    function saveState() {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+      if (isFirebaseReady && dbRef) {
+        set(dbRef, appState).catch((err) => console.error('Firebase 저장 오류:', err));
+      }
+    }
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(LOCAL_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          appState = {
+            notices: Array.isArray(parsed.notices) ? parsed.notices : [],
+            days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {}
+          };
+        }
+      } catch (e) {
+        console.warn('로컬 데이터 로드 실패:', e);
+      }
+    }
+
+    function initFirebase() {
+      const hasConfig = Boolean(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL);
+      if (!hasConfig) return;
+
+      try {
+        const app = initializeApp(FIREBASE_CONFIG);
+        const db = getDatabase(app);
+        dbRef = ref(db, `study_raccoon/${ROOM_ID}`);
+        isFirebaseReady = true;
+
+        const syncDot = document.getElementById('syncDot');
+        const syncLabel = document.getElementById('syncLabel');
+        syncDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        syncLabel.textContent = '실시간 동기화';
+
+        onValue(dbRef, (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            appState = {
+              notices: Array.isArray(val.notices) ? val.notices : [],
+              days: val.days && typeof val.days === 'object' ? val.days : {}
+            };
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+            renderAll();
+          }
+        });
+      } catch (err) {
+        console.error('Firebase 초기화 실패:', err);
+      }
+    }
+
+    // --- 테마 ---
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyTheme(isDark);
+    }
+
+    function applyTheme(isDark) {
+      document.documentElement.classList.toggle('dark', isDark);
+      document.getElementById('btnThemeToggle').textContent = isDark ? '☀️' : '🌙';
+      localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+    }
+
+    // --- 렌더링 ---
+    function renderNotice() {
+      const track = document.getElementById('marqueeTrack');
+      const notices = appState.notices || [];
+      if (notices.length === 0) {
+        track.textContent = '';
+        track.style.animation = 'none';
+        return;
+      }
+      const latest = notices[0];
+      if (track.textContent !== latest.text) {
+        track.textContent = latest.text;
+        track.style.animation = 'none';
+        void track.offsetWidth;
+        const duration = Math.max(10, Math.min(24, latest.text.length * 0.35 + 8));
+        track.style.animation = `marquee-scroll ${duration}s linear infinite`;
+      }
+      track.classList.toggle('paused', isMarqueePaused);
+    }
+
+    function renderDateBar() {
+      document.getElementById('dateDisplay').textContent = formatDateKorean(currentDateStr);
+      const todayBtn = document.getElementById('btnToday');
+      todayBtn.classList.toggle('hidden', currentDateStr === getTodayStr());
+    }
+
+    function renderLectures() {
+      const day = getDayData(currentDateStr);
+      const goal = Math.max(1, Math.min(15, Number(day.lectureGoal) || 5));
+      const done = Math.max(0, Math.min(goal, Number(day.lectureDone) || 0));
+      day.lectureGoal = goal;
+      day.lectureDone = done;
+
+      document.getElementById('lectureCountBadge').textContent = `${done} / ${goal}강`;
+      document.getElementById('lectureGoalText').textContent = goal;
+
+      const grid = document.getElementById('lectureGrid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= goal; i++) {
+        const isDone = i <= done;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `w-10 h-10 rounded-xl flex items-center justify-center text-lg border tap-pop ${
+          isDone
+            ? 'bg-indigo-50 border-indigo-300 dark:bg-indigo-950/70 dark:border-indigo-700'
+            : 'bg-slate-50 border-slate-200 text-slate-300 dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-600'
+        }`;
+        btn.textContent = isDone ? '✏️' : '○';
+        btn.addEventListener('click', () => {
+          day.lectureDone = (done === i) ? i - 1 : i;
+          saveState();
+          renderLectures();
+        });
+        grid.appendChild(btn);
+      }
+    }
+
+    function renderStudyTime() {
+      const day = getDayData(currentDateStr);
+      const total = Math.max(0, Number(day.studyMinutes) || 0);
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      document.getElementById('studyTimeDisplay').textContent = `${h}시간 ${String(m).padStart(2, '0')}분`;
+    }
+
+    function renderEvaluation() {
+      const day = getDayData(currentDateStr);
+      document.getElementById('goodScoreText').textContent = day.goodScore || 0;
+      document.getElementById('badScoreText').textContent = day.badScore || 0;
+
+      const goodInput = document.getElementById('goodReasonInput');
+      if (document.activeElement !== goodInput) goodInput.value = day.goodReason || '';
+
+      const badInput = document.getElementById('badReasonInput');
+      if (document.activeElement !== badInput) badInput.value = day.badReason || '';
+
+      const goodBox = document.getElementById('goodThumbs');
+      goodBox.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const active = i <= (day.goodScore || 0);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '👍';
+        btn.className = `text-lg leading-none p-1 rounded-lg tap-pop ${active ? 'opacity-100 scale-105' : 'opacity-25 grayscale'}`;
+        btn.addEventListener('click', () => {
+          day.goodScore = (day.goodScore === i) ? 0 : i;
+          saveState();
+          renderEvaluation();
+        });
+        goodBox.appendChild(btn);
+      }
+
+      const badBox = document.getElementById('badThumbs');
+      badBox.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const active = i <= (day.badScore || 0);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '👎';
+        btn.className = `text-lg leading-none p-1 rounded-lg tap-pop ${active ? 'opacity-100 scale-105' : 'opacity-25 grayscale'}`;
+        btn.addEventListener('click', () => {
+          day.badScore = (day.badScore === i) ? 0 : i;
+          saveState();
+          renderEvaluation();
+        });
+        badBox.appendChild(btn);
+      }
+    }
+
+    function renderFoods() {
+      const day = getDayData(currentDateStr);
+      const list = document.getElementById('foodList');
+      list.innerHTML = '';
+      day.foods.forEach((item, idx) => {
+        const chip = document.createElement('span');
+        const colorCls = FOOD_COLORS[idx % FOOD_COLORS.length];
+        chip.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${colorCls}`;
+
+        const label = document.createElement('span');
+        label.textContent = item;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '×';
+        delBtn.className = 'text-sm leading-none opacity-70 hover:opacity-100 font-bold';
+        delBtn.addEventListener('click', () => {
+          day.foods.splice(idx, 1);
+          saveState();
+          renderFoods();
+        });
+
+        chip.appendChild(label);
+        chip.appendChild(delBtn);
+        list.appendChild(chip);
+      });
+    }
+
+    function renderNoticeHistory() {
+      const list = document.getElementById('noticeHistoryList');
+      const notices = appState.notices || [];
+      list.innerHTML = '';
+
+      if (notices.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-xs text-slate-400 text-center py-6';
+        empty.textContent = '등록된 공지 기록이 없습니다.';
+        list.appendChild(empty);
+        return;
+      }
+
+      notices.forEach((n, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-start justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70';
+
+        const left = document.createElement('div');
+        left.className = 'min-w-0 flex-1';
+
+        const textEl = document.createElement('p');
+        textEl.className = 'text-xs font-medium break-words';
+        textEl.textContent = (idx === 0 ? '📌 ' : '') + n.text;
+
+        const timeEl = document.createElement('p');
+        timeEl.className = 'text-[10px] text-slate-400 mt-1';
+        timeEl.textContent = n.createdAt || '';
+
+        left.appendChild(textEl);
+        left.appendChild(timeEl);
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.textContent = '삭제';
+        delBtn.className = 'shrink-0 text-[11px] text-rose-500 hover:underline px-1';
+        delBtn.addEventListener('click', () => {
+          appState.notices.splice(idx, 1);
+          saveState();
+          renderNotice();
+          renderNoticeHistory();
+        });
+
+        row.appendChild(left);
+        row.appendChild(delBtn);
+        list.appendChild(row);
+      });
+    }
+
+    function renderAll() {
+      renderNotice();
+      renderDateBar();
+      renderLectures();
+      renderStudyTime();
+      renderEvaluation();
+      renderFoods();
+    }
+
+    // --- 스톱워치 ---
+    function updateSwDisplay() {
+      const h = Math.floor(swElapsedSec / 3600);
+      const m = Math.floor((swElapsedSec % 3600) / 60);
+      const s = swElapsedSec % 60;
+      document.getElementById('swDisplay').textContent =
+        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function stopStopwatch() {
+      if (swTimer) {
+        clearInterval(swTimer);
+        swTimer = null;
+      }
+      const btn = document.getElementById('btnSwToggle');
+      btn.textContent = '시작';
+      btn.className = 'py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop';
+    }
+
+    // --- 이벤트 바인딩 ---
+    document.getElementById('btnThemeToggle').addEventListener('click', () => {
+      applyTheme(!document.documentElement.classList.contains('dark'));
+    });
+
+    // 공지 터치 시 멈춤/재생 토글
+    document.getElementById('marqueeWrap').addEventListener('click', () => {
+      if (!appState.notices || appState.notices.length === 0) return;
+      isMarqueePaused = !isMarqueePaused;
+      document.getElementById('marqueeTrack').classList.toggle('paused', isMarqueePaused);
+    });
+
+    // 공지 쓰기 모달
+    document.getElementById('btnOpenNoticeWrite').addEventListener('click', () => {
+      const input = document.getElementById('noticeInput');
+      input.value = '';
+      document.getElementById('modalNoticeWrite').classList.remove('hidden');
+      setTimeout(() => input.focus(), 50);
+    });
+
+    function submitNotice() {
+      const input = document.getElementById('noticeInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const now = new Date();
+      const stamp = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      appState.notices.unshift({ id: Date.now(), text, createdAt: stamp });
+      if (appState.notices.length > 30) appState.notices = appState.notices.slice(0, 30);
+      isMarqueePaused = false;
+      saveState();
+      renderNotice();
+      document.getElementById('modalNoticeWrite').classList.add('hidden');
+    }
+
+    document.getElementById('btnSaveNotice').addEventListener('click', submitNotice);
+    document.getElementById('noticeInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitNotice();
+    });
+
+    // 공지 기록 모달
+    document.getElementById('btnOpenNoticeHistory').addEventListener('click', () => {
+      renderNoticeHistory();
+      document.getElementById('modalNoticeHistory').classList.remove('hidden');
+    });
+
+    // 모달 닫기 공통
+    document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.dataset.closeModal).classList.add('hidden');
+      });
+    });
+
+    // 날짜 이동
+    document.getElementById('btnPrevDate').addEventListener('click', () => {
+      currentDateStr = shiftDate(currentDateStr, -1);
+      renderAll();
+    });
+    document.getElementById('btnNextDate').addEventListener('click', () => {
+      currentDateStr = shiftDate(currentDateStr, 1);
+      renderAll();
+    });
+    document.getElementById('btnToday').addEventListener('click', () => {
+      currentDateStr = getTodayStr();
+      renderAll();
+    });
+
+    // 목표 강의 수 조절
+    document.getElementById('btnGoalMinus').addEventListener('click', () => {
+      const day = getDayData(currentDateStr);
+      if (day.lectureGoal > 1) {
+        day.lectureGoal -= 1;
+        if (day.lectureDone > day.lectureGoal) day.lectureDone = day.lectureGoal;
+        saveState();
+        renderLectures();
+      }
+    });
+    document.getElementById('btnGoalPlus').addEventListener('click', () => {
+      const day = getDayData(currentDateStr);
+      if (day.lectureGoal < 15) {
+        day.lectureGoal += 1;
+        saveState();
+        renderLectures();
+      }
+    });
+
+    // 공부 시간 빠른 추가
+    document.querySelectorAll('.btn-add-time').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const delta = Number(btn.dataset.addMin);
+        const day = getDayData(currentDateStr);
+        day.studyMinutes = Math.max(0, (Number(day.studyMinutes) || 0) + delta);
+        saveState();
+        renderStudyTime();
+      });
+    });
+
+    // 공부 시간 직접 입력 모달
+    document.getElementById('btnDirectTime').addEventListener('click', () => {
+      const day = getDayData(currentDateStr);
+      const total = Math.max(0, Number(day.studyMinutes) || 0);
+      document.getElementById('directHoursInput').value = Math.floor(total / 60);
+      document.getElementById('directMinsInput').value = total % 60;
+      document.getElementById('modalDirectTime').classList.remove('hidden');
+    });
+    document.getElementById('btnSaveDirectTime').addEventListener('click', () => {
+      const h = Math.max(0, Number(document.getElementById('directHoursInput').value) || 0);
+      const m = Math.max(0, Number(document.getElementById('directMinsInput').value) || 0);
+      const day = getDayData(currentDateStr);
+      day.studyMinutes = h * 60 + m;
+      saveState();
+      renderStudyTime();
+      document.getElementById('modalDirectTime').classList.add('hidden');
+    });
+
+    // 스톱워치 토글/조작
+    document.getElementById('btnToggleStopwatch').addEventListener('click', () => {
+      document.getElementById('stopwatchBox').classList.toggle('hidden');
+    });
+    document.getElementById('btnSwToggle').addEventListener('click', () => {
+      if (swTimer) {
+        stopStopwatch();
+      } else {
+        swTimer = setInterval(() => {
+          swElapsedSec += 1;
+          updateSwDisplay();
+        }, 1000);
+        const btn = document.getElementById('btnSwToggle');
+        btn.textContent = '일시정지';
+        btn.className = 'py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold tap-pop';
+      }
+    });
+    document.getElementById('btnSwReset').addEventListener('click', () => {
+      stopStopwatch();
+      swElapsedSec = 0;
+      updateSwDisplay();
+    });
+    document.getElementById('btnSwApply').addEventListener('click', () => {
+      if (swElapsedSec <= 0) return;
+      const addMins = Math.max(1, Math.round(swElapsedSec / 60));
+      const day = getDayData(currentDateStr);
+      day.studyMinutes = (Number(day.studyMinutes) || 0) + addMins;
+      stopStopwatch();
+      swElapsedSec = 0;
+      updateSwDisplay();
+      saveState();
+      renderStudyTime();
+    });
+
+    // 평가 이유 자동 저장
+    function bindReasonInput(id, field) {
+      document.getElementById(id).addEventListener('input', (e) => {
+        const day = getDayData(currentDateStr);
+        day[field] = e.target.value;
+        clearTimeout(reasonDebounce);
+        reasonDebounce = setTimeout(() => saveState(), 300);
+      });
+    }
+    bindReasonInput('goodReasonInput', 'goodReason');
+    bindReasonInput('badReasonInput', 'badReason');
+
+    // 내일 먹고 싶은 음식 추가
+    document.getElementById('foodForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('foodInput');
+      const val = input.value.trim();
+      if (!val) return;
+      const day = getDayData(currentDateStr);
+      day.foods.push(val);
+      input.value = '';
+      saveState();
+      renderFoods();
+    });
+
+    // Service Worker 등록
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('SW 등록 실패:', err);
+        });
+      });
+    }
+
+    // 초기화 실행
+    initTheme();
+    loadLocalState();
+    renderAll();
+    initFirebase();
+  </script>
+</body>
+</html>
