@@ -1,8 +1,9 @@
-const CACHE_NAME = 'study-raccoon-v9';
+const CACHE_NAME = 'study-raccoon-v10';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './logo-transparent.png',
   './icon-192.png',
   './icon-512.png'
 ];
