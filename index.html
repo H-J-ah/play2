@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>열공 너구리 - 공유 공부기록</title>
+  <title>우리의 공부 기록</title>
 
   <!-- PWA 메타태그 & 아이콘 -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <meta name="theme-color" content="#6366f1" />
+  <meta name="theme-color" content="#5b4ef5" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="열공너구리" />
+  <meta name="apple-mobile-web-app-title" content="우리의 공부 기록" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -55,107 +55,100 @@
       100% { transform: translateX(-100%); }
     }
 
-    /* 이모지/버튼 터치 피드백 */
     .tap-pop {
       transition: transform 0.12s ease, opacity 0.15s ease;
     }
     .tap-pop:active {
-      transform: scale(0.88);
+      transform: scale(0.92);
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200">
+<body class="bg-[#f6f7fb] text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200">
 
-  <!-- 상단 공지 전광판 (위 여백 확보) -->
-  <div class="sticky top-0 z-30 pt-2.5 px-3 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm">
-    <div class="max-w-md mx-auto bg-indigo-600 dark:bg-indigo-900 text-white rounded-2xl shadow-sm flex items-center gap-2 px-3 py-2">
-      <button id="btnNoticePauseToggle" type="button"
-        class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 shrink-0 flex items-center gap-1 tap-pop"
-        title="공지 멈춤/재생">
-        <span>📢</span>
-        <span id="noticeStateTag">공지</span>
-      </button>
+  <div class="max-w-md mx-auto px-4 pt-4 pb-12 space-y-4">
 
-      <div id="marqueeWrap" class="marquee-wrap flex-1 min-w-0 h-6 flex items-center" role="button" tabindex="0" aria-label="공지 터치해서 멈춤 또는 재생">
-        <div id="marqueeTrack" class="marquee-track text-sm font-medium"></div>
-      </div>
-
-      <button id="btnOpenNoticeWrite" type="button"
-        class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 transition">
-        쓰기
-      </button>
-      <button id="btnOpenNoticeHistory" type="button"
-        class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 transition">
-        기록
-      </button>
-    </div>
-  </div>
-
-  <!-- 메인 컨테이너 -->
-  <main class="max-w-md mx-auto px-4 pt-3.5 pb-10 space-y-4">
-
-    <!-- 헤더: 앱 타이틀 + 실시간 동기화 상태 + 공유 설정 + 다크모드 -->
+    <!-- 헤더 -->
     <header class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5 min-w-0">
-        <img src="./icon-192.png" alt="열공 너구리" class="w-9 h-9 rounded-xl shadow-sm object-cover bg-indigo-100 shrink-0" />
-        <div class="min-w-0">
-          <h1 class="text-base font-bold leading-tight tracking-tight truncate">열공 너구리</h1>
-          <button id="btnSyncBadge" type="button" class="flex items-center gap-1.5 mt-0.5 text-left group">
-            <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
-            <span id="syncLabel" class="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 truncate">로컬 저장</span>
-          </button>
-        </div>
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-xl leading-none">📚</span>
+        <h1 class="text-lg font-extrabold tracking-tight truncate">우리의 공부 기록</h1>
       </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btnOpenFirebaseModal" type="button" aria-label="친구와 실시간 연결"
-          class="h-9 px-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm tap-pop">
-          <span>🔗</span>
-          <span>공유</span>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btnOpenFirebaseModal" type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 transition tap-pop">
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+          <span id="syncLabel" class="truncate max-w-[110px]">로컬 저장</span>
         </button>
         <button id="btnThemeToggle" type="button" aria-label="테마 전환"
-          class="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-sm tap-pop">
+          class="w-9 h-9 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-base shadow-sm tap-pop">
           🌙
         </button>
       </div>
     </header>
 
-    <!-- 상단 탭: 오늘 기록 / 월별 기록 -->
-    <nav class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
+    <!-- 상단 탭: 오늘 기록 / 월간 달력 -->
+    <nav class="grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-slate-200/75 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
       <button id="tabTodayView" type="button"
-        class="py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition">
-        오늘 기록
+        class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+        <span>📝</span>
+        <span>오늘 기록</span>
       </button>
       <button id="tabMonthlyView" type="button"
-        class="py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition">
-        월별 기록
+        class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition">
+        <span>📅</span>
+        <span>월간 달력</span>
       </button>
     </nav>
+
+    <!-- 상단 공지 전광판 (위 여백 확보 + 터치 시 멈춤/재개) -->
+    <div class="pt-1">
+      <div class="bg-gradient-to-r from-[#5b4ef5] to-[#7c3aed] dark:from-indigo-800 dark:to-violet-900 text-white rounded-2xl shadow-sm flex items-center gap-2 px-3 py-2.5">
+        <button id="btnNoticePauseToggle" type="button"
+          class="shrink-0 text-sm leading-none px-1 py-0.5 rounded-lg hover:bg-white/15 tap-pop"
+          title="공지 멈춤/재생">
+          <span id="noticeIcon">📢</span>
+        </button>
+
+        <div id="marqueeWrap" class="marquee-wrap flex-1 min-w-0 h-6 flex items-center" role="button" tabindex="0" aria-label="공지 터치해서 멈춤 또는 재생">
+          <div id="marqueeTrack" class="marquee-track text-sm font-medium"></div>
+        </div>
+
+        <button id="btnOpenNoticeWrite" type="button"
+          class="shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 active:scale-95 transition">
+          공지 쓰기
+        </button>
+        <button id="btnOpenNoticeHistory" type="button"
+          class="shrink-0 text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 transition">
+          기록
+        </button>
+      </div>
+    </div>
 
     <!-- ==================== 오늘 기록 탭 ==================== -->
     <div id="viewToday" class="space-y-4">
 
       <!-- 날짜 선택 바 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl px-3 py-2.5 border border-slate-200/70 dark:border-slate-800 shadow-sm flex items-center justify-between">
         <button id="btnPrevDate" type="button"
-          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-          ‹
+          class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold tap-pop">
+          ◀
         </button>
         <div class="flex items-center gap-2">
-          <span id="dateDisplay" class="text-sm font-bold tracking-tight"></span>
+          <span id="dateDisplay" class="text-sm font-extrabold tracking-tight"></span>
           <button id="btnToday" type="button"
-            class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
+            class="hidden text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
             오늘
           </button>
         </div>
         <button id="btnNextDate" type="button"
-          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-          ›
+          class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold tap-pop">
+          ▶
         </button>
       </section>
 
       <!-- 1. 오늘 들은 강의 수 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <h2 class="text-sm font-bold">오늘 들은 강의 수</h2>
@@ -176,12 +169,11 @@
             </button>
           </div>
         </div>
-
         <div id="lectureGrid" class="flex flex-wrap gap-2"></div>
       </section>
 
       <!-- 2. 오늘 총 공부 시간 & 스톱워치 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-sm font-bold">오늘 총 공부 시간</h2>
           <button id="btnToggleStopwatch" type="button"
@@ -243,7 +235,7 @@
       </section>
 
       <!-- 3. 오늘 공부 평가 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm space-y-4">
         <h2 class="text-sm font-bold">오늘 공부 평가</h2>
 
         <!-- 잘한 점 -->
@@ -274,7 +266,7 @@
       </section>
 
       <!-- 4. 내일 먹고 싶은 음식 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm space-y-3">
         <h2 class="text-sm font-bold">🍽️ 내일 먹고 싶은 음식</h2>
 
         <form id="foodForm" class="flex gap-2">
@@ -290,87 +282,148 @@
       </section>
     </div>
 
-    <!-- ==================== 월별 기록 탭 ==================== -->
+    <!-- ==================== 월간 달력 탭 ==================== -->
     <div id="viewMonthly" class="hidden space-y-4">
 
       <!-- 월 선택 바 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+      <section class="bg-white dark:bg-slate-900 rounded-2xl px-3 py-2.5 border border-slate-200/70 dark:border-slate-800 shadow-sm flex items-center justify-between">
         <button id="btnPrevMonth" type="button"
-          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-          ‹
+          class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold tap-pop">
+          ◀
         </button>
         <div class="flex items-center gap-2">
-          <span id="monthDisplay" class="text-sm font-bold tracking-tight"></span>
+          <span id="monthDisplay" class="text-sm font-extrabold tracking-tight"></span>
           <button id="btnThisMonth" type="button"
-            class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
+            class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-500 dark:bg-indigo-900/50 dark:text-indigo-300 tap-pop">
             이번 달
           </button>
         </div>
         <button id="btnNextMonth" type="button"
-          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-          ›
+          class="w-8 h-8 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-300 font-bold tap-pop">
+          ▶
         </button>
       </section>
 
-      <!-- 월간 달력 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+      <!-- 연속 공부 기록 / 이달의 최고 기록 -->
+      <section class="grid grid-cols-2 gap-3">
+        <div class="rounded-2xl p-3.5 bg-amber-50/75 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 shadow-sm">
+          <div class="text-[11px] font-semibold text-amber-700 dark:text-amber-300">연속 공부 기록</div>
+          <div id="streakDisplay" class="text-sm font-extrabold text-amber-900 dark:text-amber-100 mt-1.5">🔥 0일 연속 공부 중</div>
+        </div>
+        <div class="rounded-2xl p-3.5 bg-indigo-50/75 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60 shadow-sm">
+          <div class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">이달의 최고 기록</div>
+          <div id="bestDayDisplay" class="text-sm font-extrabold text-indigo-900 dark:text-indigo-100 mt-1.5 truncate">🏆 기록 없음</div>
+        </div>
+      </section>
+
+      <!-- 월간 달력 카드 -->
+      <section class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm space-y-3">
+        <div class="grid grid-cols-7 text-center text-xs font-bold pb-1">
+          <span class="text-rose-500">일</span>
+          <span class="text-slate-500 dark:text-slate-400">월</span>
+          <span class="text-slate-500 dark:text-slate-400">화</span>
+          <span class="text-slate-500 dark:text-slate-400">수</span>
+          <span class="text-slate-500 dark:text-slate-400">목</span>
+          <span class="text-slate-500 dark:text-slate-400">금</span>
+          <span class="text-sky-500">토</span>
+        </div>
+
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+
+        <!-- 하단 범례 -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
+          <span>날짜를 눌러 상세 기록 확인</span>
+          <div class="flex items-center gap-1">
+            <span>적음</span>
+            <span class="w-2.5 h-2.5 rounded-[3px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"></span>
+            <span class="w-2.5 h-2.5 rounded-[3px] bg-indigo-100 dark:bg-indigo-950"></span>
+            <span class="w-2.5 h-2.5 rounded-[3px] bg-indigo-200 dark:bg-indigo-800"></span>
+            <span class="w-2.5 h-2.5 rounded-[3px] bg-indigo-400 dark:bg-indigo-600"></span>
+            <span class="w-2.5 h-2.5 rounded-[3px] bg-indigo-600 dark:bg-indigo-400"></span>
+            <span>많음</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 선택 날짜 상세 카드 -->
+      <section class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-indigo-200/80 dark:border-indigo-900/70 shadow-sm space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm">📌</span>
+            <h3 id="selectedDateTitle" class="text-sm font-extrabold truncate"></h3>
+          </div>
+          <button id="btnEditSelectedDate" type="button"
+            class="shrink-0 px-3.5 py-1.5 rounded-full bg-[#5b4ef5] hover:bg-indigo-600 text-white text-xs font-bold shadow-sm tap-pop">
+            이 날짜 기록 수정
+          </button>
+        </div>
+        <div id="selectedDateBody" class="text-xs text-slate-500 dark:text-slate-400"></div>
+      </section>
+
+      <!-- 평균 계산 기준 토글 -->
+      <section class="flex items-center justify-between gap-2 px-1">
+        <span class="text-xs font-bold text-slate-500 dark:text-slate-400">평균 계산 기준</span>
+        <div class="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+          <button id="btnAvgModeStudied" type="button"
+            class="px-3 py-1 rounded-lg text-[11px] font-bold transition">
+            공부한 날 평균
+          </button>
+          <button id="btnAvgModeAll" type="button"
+            class="px-3 py-1 rounded-lg text-[11px] font-bold transition">
+            전체 일수 평균
+          </button>
+        </div>
+      </section>
+
+      <!-- 주 단위 하루 평균 기록 -->
+      <section class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-bold">월간 달력</h2>
-          <span class="text-[11px] text-slate-400">날짜를 눌러 기록 확인</span>
+          <h2 class="text-sm font-extrabold flex items-center gap-1.5">
+            <span>📊</span>
+            <span>주 단위 하루 평균 기록</span>
+          </h2>
+          <span id="weeklyBasisLabel" class="text-[11px] font-semibold text-slate-400">공부한 날 기준</span>
         </div>
-
-        <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 pb-1">
-          <span class="text-rose-400">일</span>
-          <span>월</span>
-          <span>화</span>
-          <span>수</span>
-          <span>목</span>
-          <span>금</span>
-          <span class="text-sky-400">토</span>
-        </div>
-
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
-
-        <!-- 달력 선택 날짜 미리보기 -->
-        <div id="calendarSelectedDetail" class="pt-2.5 border-t border-slate-100 dark:border-slate-800"></div>
+        <div id="weeklyList" class="space-y-2.5"></div>
       </section>
 
-      <!-- 월간 평균·합계 요약 카드 -->
-      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-        <h2 class="text-sm font-bold mb-3">월간 평균·합계 기록</h2>
+      <!-- 월 단위 하루 평균 기록 -->
+      <section class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-extrabold flex items-center gap-1.5">
+            <span>📅</span>
+            <span>월 단위 하루 평균 기록</span>
+          </h2>
+          <span id="monthlyDaysPill" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+            0일 / 30일
+          </span>
+        </div>
+
         <div class="grid grid-cols-2 gap-2.5">
-          <div class="p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/50">
-            <div class="text-[11px] text-indigo-600 dark:text-indigo-300 font-medium">총 공부 시간</div>
-            <div id="monthlyTotalTime" class="text-base font-extrabold text-indigo-700 dark:text-indigo-200 mt-0.5">0시간 00분</div>
-            <div id="monthlyAvgTime" class="text-[10px] text-indigo-500/90 dark:text-indigo-300/80 mt-0.5">일 평균 0시간 00분</div>
+          <div class="rounded-2xl p-4 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 text-center">
+            <div class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">일평균 공부 시간</div>
+            <div id="monthlyAvgTimeVal" class="text-lg font-extrabold text-slate-900 dark:text-white mt-1.5">0분</div>
           </div>
-          <div class="p-3 rounded-xl bg-slate-100/90 dark:bg-slate-800/80">
-            <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">총 수강 강의</div>
-            <div id="monthlyTotalLectures" class="text-base font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">0강</div>
-            <div id="monthlyAvgLectures" class="text-[10px] text-slate-400 mt-0.5">일 평균 0.0강</div>
-          </div>
-          <div class="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40">
-            <div class="text-[11px] text-emerald-600 dark:text-emerald-300 font-medium">평균 잘한 점수</div>
-            <div id="monthlyAvgGood" class="text-sm font-extrabold text-emerald-700 dark:text-emerald-200 mt-0.5">0.0 / 5</div>
-          </div>
-          <div class="p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/40">
-            <div class="text-[11px] text-rose-500 dark:text-rose-300 font-medium">평균 아쉬운 점수</div>
-            <div id="monthlyAvgBad" class="text-sm font-extrabold text-rose-600 dark:text-rose-200 mt-0.5">0.0 / 5</div>
+          <div class="rounded-2xl p-4 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/60 text-center">
+            <div class="text-[11px] font-semibold text-purple-600 dark:text-purple-300">일평균 들은 강의</div>
+            <div id="monthlyAvgLecVal" class="text-lg font-extrabold text-indigo-950 dark:text-indigo-100 mt-1.5">0.0강</div>
           </div>
         </div>
-      </section>
 
-      <!-- 일별 기록 리스트 -->
-      <section class="space-y-2.5">
-        <div class="flex items-center justify-between px-1">
-          <h2 class="text-sm font-bold">날짜별 기록</h2>
-          <span id="monthlyDaysCount" class="text-xs text-slate-400">0일 기록됨</span>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="rounded-2xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">월 누적 시간</span>
+            <span id="monthlyTotalTimeVal" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">0시간 0분</span>
+          </div>
+          <div class="rounded-2xl px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">월 누적 강의</span>
+            <span id="monthlyTotalLecVal" class="text-xs font-extrabold text-slate-800 dark:text-slate-100">0강</span>
+          </div>
         </div>
-        <div id="monthlyDayList" class="space-y-2.5"></div>
       </section>
     </div>
 
-  </main>
+  </div>
 
   <!-- 모달: Firebase 실시간 공유 설정 -->
   <div id="modalFirebase" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
@@ -381,7 +434,7 @@
       </div>
 
       <p class="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-        Realtime Database URL을 입력해 연결합니다. 기존 간식/소주 앱 DB를 써도 <code>study_raccoon</code> 경로로 따로 저장됩니다.
+        Realtime Database URL과 방 코드를 친구와 동일하게 맞추면 실시간으로 공유됩니다.
       </p>
 
       <div class="space-y-2.5">
@@ -490,35 +543,27 @@
     </div>
   </div>
 
-  <!-- Firebase 실시간 동기화 (SDK + REST 폴백 하이브리드) -->
+  <!-- Firebase 실시간 동기화 (study_raccoon 경로 고정 + REST 폴백) -->
   <script type="module">
     import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getDatabase, ref, onValue, set, onDisconnect, off } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+    import { getDatabase, ref, onValue, set, off } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
     const DEFAULT_DATABASE_URL = "https://studycoon-default-rtdb.asia-southeast1.firebasedatabase.app";
     const DEFAULT_ROOM_ID = "1109";
 
     const FB_SETTINGS_KEY = 'study_raccoon_fb_settings';
     const THEME_KEY = 'study_raccoon_theme';
-    const CLIENT_ID_KEY = 'study_raccoon_client_id';
     const TAB_KEY = 'study_raccoon_active_tab';
-
-    let clientId = localStorage.getItem(CLIENT_ID_KEY);
-    if (!clientId) {
-      clientId = 'u_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-      localStorage.setItem(CLIENT_ID_KEY, clientId);
-    }
+    const AVG_MODE_KEY = 'study_raccoon_avg_mode';
 
     let fbSettings = { databaseURL: '', roomId: DEFAULT_ROOM_ID };
+    const BASE_PATH = 'study_raccoon';
     let fbApp = null;
     let fbDb = null;
     let dataRef = null;
-    let presenceListRef = null;
-    let connectedInfoRef = null;
     let restPollTimer = null;
     let isFirebaseReady = false;
     let isRestMode = false;
-    let onlineCount = 0;
 
     let appState = {
       notices: [],
@@ -526,9 +571,10 @@
     };
 
     let currentDateStr = getTodayStr();
-    let currentMonthStr = getTodayStr().slice(0, 7); // 'YYYY-MM'
+    let currentMonthStr = getTodayStr().slice(0, 7);
     let selectedCalendarDateStr = getTodayStr();
     let activeTab = localStorage.getItem(TAB_KEY) === 'monthly' ? 'monthly' : 'today';
+    let avgMode = localStorage.getItem(AVG_MODE_KEY) === 'all' ? 'all' : 'studied';
     let isMarqueePaused = false;
     let swTimer = null;
     let swElapsedSec = 0;
@@ -560,10 +606,7 @@
 
     function getTodayStr() {
       const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function shiftDate(dateStr, deltaDays) {
@@ -578,11 +621,11 @@
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    function formatDateKorean(dateStr) {
+    function formatDateFull(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
       const dt = new Date(y, m - 1, d);
       const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-      return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} (${weekdays[dt.getDay()]})`;
+      return `${y}년 ${m}월 ${d}일 (${weekdays[dt.getDay()]})`;
     }
 
     function formatMonthKorean(ymStr) {
@@ -590,17 +633,37 @@
       return `${y}년 ${m}월`;
     }
 
-    function formatMinutes(mins) {
+    function formatMinutesShort(mins) {
+      const total = Math.max(0, Math.round(Number(mins) || 0));
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      if (h === 0) return `${m}분`;
+      if (m === 0) return `${h}시간`;
+      return `${h}시간 ${m}분`;
+    }
+
+    function formatMinutesPad(mins) {
       const total = Math.max(0, Math.round(Number(mins) || 0));
       const h = Math.floor(total / 60);
       const m = total % 60;
       return `${h}시간 ${String(m).padStart(2, '0')}분`;
     }
 
-    function hasDayActivity(d) {
+    function formatMinutesCumulative(mins) {
+      const total = Math.max(0, Math.round(Number(mins) || 0));
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return `${h}시간 ${m}분`;
+    }
+
+    function isStudiedDay(d) {
       if (!d || typeof d !== 'object') return false;
-      return (Number(d.studyMinutes) || 0) > 0 ||
-        (Number(d.lectureDone) || 0) > 0 ||
+      return (Number(d.studyMinutes) || 0) > 0 || (Number(d.lectureDone) || 0) > 0;
+    }
+
+    function hasAnyRecord(d) {
+      if (!d || typeof d !== 'object') return false;
+      return isStudiedDay(d) ||
         (Number(d.goodScore) || 0) > 0 ||
         (Number(d.badScore) || 0) > 0 ||
         Boolean((d.goodReason || '').trim()) ||
@@ -609,9 +672,7 @@
     }
 
     function normalizeStateShape(raw) {
-      if (!raw || typeof raw !== 'object') {
-        return { notices: [], days: {} };
-      }
+      if (!raw || typeof raw !== 'object') return { notices: [], days: {} };
       const noticesArr = Array.isArray(raw.notices)
         ? raw.notices
         : (raw.notices && typeof raw.notices === 'object' ? Object.values(raw.notices) : []);
@@ -650,49 +711,61 @@
       } else if (mode === 'error') {
         dot.className = 'w-2 h-2 rounded-full bg-rose-500 shrink-0';
       } else {
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
+        dot.className = 'w-2 h-2 rounded-full bg-slate-400 shrink-0';
       }
       label.textContent = text;
+    }
+
+    async function probeAllowedPath(dbUrl, room) {
+      try {
+        const res = await fetch(`${dbUrl}/${BASE_PATH}/${encodeURIComponent(room)}/data.json`, { cache: 'no-store' });
+        if (res.ok) {
+          return { ok: true, base: BASE_PATH, data: await res.json() };
+        }
+      } catch (e) {}
+      return { ok: false, base: BASE_PATH, data: null };
+    }
+
+    async function restGetState(dbUrl, room, basePath) {
+      const endpoint = `${dbUrl}/${basePath}/${encodeURIComponent(room)}/data.json`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    async function restPutState(dbUrl, room, basePath, payload) {
+      const endpoint = `${dbUrl}/${basePath}/${encodeURIComponent(room)}/data.json`;
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || { notices: [], days: {} })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     }
 
     async function saveState() {
       localStorage.setItem(getLocalKey(), JSON.stringify(appState));
       const dbUrl = normalizeDbUrl(fbSettings.databaseURL);
       const room = sanitizeRoomId(fbSettings.roomId);
-
       if (!dbUrl) return;
 
       if (isFirebaseReady && dataRef && !isRestMode) {
         try {
           await set(dataRef, appState);
-          updateOnlineLabel(room);
+          setSyncStatus('online', `방 ${room} 연결됨`);
         } catch (err) {
-          console.warn('SDK 저장 실패, REST 시도:', err);
-          await restPutState(dbUrl, room, appState);
+          try {
+            await restPutState(dbUrl, room, BASE_PATH, appState);
+          } catch (e2) {
+            setSyncStatus('error', '저장 실패 (규칙 확인)');
+          }
         }
       } else if (isRestMode) {
-        await restPutState(dbUrl, room, appState);
-      }
-    }
-
-    async function restGetState(dbUrl, room) {
-      const endpoint = `${dbUrl}/study_raccoon/${encodeURIComponent(room)}/data.json`;
-      const res = await fetch(endpoint, { cache: 'no-store' });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      return await res.json();
-    }
-
-    async function restPutState(dbUrl, room, payload) {
-      const endpoint = `${dbUrl}/study_raccoon/${encodeURIComponent(room)}/data.json`;
-      const res = await fetch(endpoint, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload || { notices: [], days: {} })
-      });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        try {
+          await restPutState(dbUrl, room, BASE_PATH, appState);
+        } catch (e) {
+          setSyncStatus('error', '저장 실패 (규칙 확인)');
+        }
       }
     }
 
@@ -703,9 +776,7 @@
           appState = normalizeStateShape(JSON.parse(raw));
           return;
         }
-      } catch (e) {
-        console.warn('로컬 데이터 로드 실패:', e);
-      }
+      } catch (e) {}
       appState = { notices: [], days: {} };
     }
 
@@ -743,63 +814,15 @@
     async function teardownFirebase() {
       isFirebaseReady = false;
       isRestMode = false;
-      onlineCount = 0;
       if (restPollTimer) {
         clearInterval(restPollTimer);
         restPollTimer = null;
       }
       if (dataRef) { off(dataRef); dataRef = null; }
-      if (presenceListRef) { off(presenceListRef); presenceListRef = null; }
-      if (connectedInfoRef) { off(connectedInfoRef); connectedInfoRef = null; }
       if (fbApp) {
         try { await deleteApp(fbApp); } catch (e) {}
         fbApp = null;
         fbDb = null;
-      }
-    }
-
-    async function startRestFallback(dbUrl, room) {
-      isRestMode = true;
-      try {
-        const remoteVal = await restGetState(dbUrl, room);
-        isFirebaseReady = true;
-        if (remoteVal) {
-          appState = normalizeStateShape(remoteVal);
-          localStorage.setItem(getLocalKey(), JSON.stringify(appState));
-          renderAll();
-        } else {
-          const hasLocal = (appState.notices && appState.notices.length > 0) ||
-            (appState.days && Object.keys(appState.days).length > 0);
-          if (hasLocal) {
-            await restPutState(dbUrl, room, appState);
-          }
-        }
-        setSyncStatus('online', `방 ${room} · 연결됨`);
-
-        restPollTimer = setInterval(async () => {
-          if (document.hidden) return;
-          try {
-            const latest = await restGetState(dbUrl, room);
-            if (latest) {
-              const nextState = normalizeStateShape(latest);
-              const nextJson = JSON.stringify(nextState);
-              const curJson = JSON.stringify(appState);
-              if (nextJson !== curJson) {
-                appState = nextState;
-                localStorage.setItem(getLocalKey(), nextJson);
-                renderAll();
-              }
-            }
-            setSyncStatus('online', `방 ${room} · 연결됨`);
-          } catch (e) {}
-        }, 3000);
-        return true;
-      } catch (restErr) {
-        console.error('Firebase REST 연결 실패:', restErr);
-        isFirebaseReady = false;
-        isRestMode = false;
-        setSyncStatus('error', '연결 실패 (규칙/URL 확인)');
-        return false;
       }
     }
 
@@ -808,7 +831,6 @@
 
       const dbUrl = normalizeDbUrl(fbSettings.databaseURL);
       const room = sanitizeRoomId(fbSettings.roomId);
-
       if (!dbUrl) {
         setSyncStatus('local', '로컬 저장');
         return false;
@@ -816,77 +838,77 @@
 
       setSyncStatus('connecting', '연결 중...');
 
+      // 1단계: rooms / study_raccoon 중 권한이 열린 경로를 REST로 즉시 검증
+      const probe = await probeAllowedPath(dbUrl, room);
+      if (!probe.ok) {
+        setSyncStatus('error', '연결 실패 (규칙 확인)');
+        return false;
+      }
+
+            isFirebaseReady = true;
+
+      if (probe.data) {
+        appState = normalizeStateShape(probe.data);
+        localStorage.setItem(getLocalKey(), JSON.stringify(appState));
+        renderAll();
+      } else {
+        const hasLocal = (appState.notices && appState.notices.length > 0) ||
+          (appState.days && Object.keys(appState.days).length > 0);
+        if (hasLocal) {
+          restPutState(dbUrl, room, BASE_PATH, appState).catch(() => {});
+        }
+      }
+
+      setSyncStatus('online', `방 ${room} 연결됨`);
+
+      // 2단계: 실시간 SDK 구독 시도 (실패 시 REST 3초 폴백)
       try {
         const appName = 'study-raccoon-' + Date.now();
         fbApp = initializeApp({ databaseURL: dbUrl }, appName);
         fbDb = getDatabase(fbApp);
-
-        dataRef = ref(fbDb, `study_raccoon/${room}/data`);
-        presenceListRef = ref(fbDb, `study_raccoon/${room}/presence`);
-        const myPresenceRef = ref(fbDb, `study_raccoon/${room}/presence/${clientId}`);
-        connectedInfoRef = ref(fbDb, '.info/connected');
-
-        let initialReceived = false;
-        let sdkSucceeded = false;
+        dataRef = ref(fbDb, `${BASE_PATH}/${room}/data`);
 
         onValue(
           dataRef,
           (snapshot) => {
-            sdkSucceeded = true;
-            isFirebaseReady = true;
             isRestMode = false;
             const val = snapshot.val();
             if (val) {
               appState = normalizeStateShape(val);
               localStorage.setItem(getLocalKey(), JSON.stringify(appState));
               renderAll();
-            } else if (!initialReceived) {
-              const hasLocal = (appState.notices && appState.notices.length > 0) ||
-                (appState.days && Object.keys(appState.days).length > 0);
-              if (hasLocal) {
-                set(dataRef, appState).catch(() => {});
-              }
             }
-            initialReceived = true;
-            updateOnlineLabel(room);
+            setSyncStatus('online', `방 ${room} 연결됨`);
           },
-          async (err) => {
-            console.warn('SDK 리스너 오류, REST 폴백 전환:', err);
-            if (!sdkSucceeded) {
-              await startRestFallback(dbUrl, room);
-            }
+          () => {
+            startRestPolling(dbUrl, room, BASE_PATH);
           }
         );
-
-        onValue(connectedInfoRef, (snap) => {
-          if (snap.val() === true) {
-            onDisconnect(myPresenceRef).remove().catch(() => {});
-            set(myPresenceRef, { online: true, at: Date.now() }).catch(() => {});
-          }
-        });
-
-        onValue(presenceListRef, (snap) => {
-          const val = snap.val();
-          onlineCount = val ? Object.keys(val).length : 0;
-          if (isFirebaseReady && !isRestMode) updateOnlineLabel(room);
-        });
-
-        setTimeout(async () => {
-          if (!sdkSucceeded && !isRestMode && fbSettings.databaseURL === dbUrl) {
-            await startRestFallback(dbUrl, room);
-          }
-        }, 2500);
-
-        return true;
       } catch (err) {
-        console.warn('SDK 초기화 실패, REST 폴백 시도:', err);
-        return await startRestFallback(dbUrl, room);
+        startRestPolling(dbUrl, room, BASE_PATH);
       }
+
+      return true;
     }
 
-    function updateOnlineLabel(room) {
-      const countText = onlineCount > 0 ? ` · ${onlineCount}명 접속` : ' · 연결됨';
-      setSyncStatus('online', `방 ${room}${countText}`);
+    function startRestPolling(dbUrl, room, basePath) {
+      isRestMode = true;
+      if (restPollTimer) clearInterval(restPollTimer);
+      restPollTimer = setInterval(async () => {
+        if (document.hidden) return;
+        try {
+          const latest = await restGetState(dbUrl, room, basePath);
+          if (latest) {
+            const nextState = normalizeStateShape(latest);
+            const nextJson = JSON.stringify(nextState);
+            if (nextJson !== JSON.stringify(appState)) {
+              appState = nextState;
+              localStorage.setItem(getLocalKey(), nextJson);
+              renderAll();
+            }
+          }
+        } catch (e) {}
+      }, 3000);
     }
 
     // --- 테마 ---
@@ -902,34 +924,49 @@
       localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
     }
 
-    // --- 탭 전환 (오늘 기록 / 월별 기록) ---
+    // --- 탭 전환 ---
     function applyTab(tabName) {
       activeTab = tabName === 'monthly' ? 'monthly' : 'today';
       localStorage.setItem(TAB_KEY, activeTab);
-
       const isMonthly = activeTab === 'monthly';
+
       document.getElementById('viewToday').classList.toggle('hidden', isMonthly);
       document.getElementById('viewMonthly').classList.toggle('hidden', !isMonthly);
 
       const todayBtn = document.getElementById('tabTodayView');
       const monthlyBtn = document.getElementById('tabMonthlyView');
+      const activeCls = 'py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 bg-white dark:bg-slate-800 text-[#5b4ef5] dark:text-indigo-300 shadow-sm transition';
+      const idleCls = 'py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition';
 
-      if (!isMonthly) {
-        todayBtn.className = 'py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition';
-        monthlyBtn.className = 'py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition';
-      } else {
-        monthlyBtn.className = 'py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition';
-        todayBtn.className = 'py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition';
-        renderMonthly();
-      }
+      todayBtn.className = isMonthly ? idleCls : activeCls;
+      monthlyBtn.className = isMonthly ? activeCls : idleCls;
+
+      if (isMonthly) renderMonthly();
     }
 
-    // --- 공지 전광판 (터치 시 멈춤/재개) ---
+    // --- 평균 기준 토글 ---
+    function applyAvgMode(mode) {
+      avgMode = mode === 'all' ? 'all' : 'studied';
+      localStorage.setItem(AVG_MODE_KEY, avgMode);
+
+      const studiedBtn = document.getElementById('btnAvgModeStudied');
+      const allBtn = document.getElementById('btnAvgModeAll');
+      const activeCls = 'px-3 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-800 text-[#5b4ef5] dark:text-indigo-300 shadow-sm transition';
+      const idleCls = 'px-3 py-1 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 transition';
+
+      studiedBtn.className = avgMode === 'studied' ? activeCls : idleCls;
+      allBtn.className = avgMode === 'all' ? activeCls : idleCls;
+      document.getElementById('weeklyBasisLabel').textContent = avgMode === 'studied' ? '공부한 날 기준' : '전체 일수 기준';
+
+      if (activeTab === 'monthly') renderMonthly();
+    }
+
+    // --- 공지 전광판 ---
     function syncMarqueePausedUI() {
       const track = document.getElementById('marqueeTrack');
-      const tag = document.getElementById('noticeStateTag');
+      const icon = document.getElementById('noticeIcon');
       track.classList.toggle('paused', isMarqueePaused);
-      tag.textContent = isMarqueePaused ? '멈춤' : '공지';
+      icon.textContent = isMarqueePaused ? '⏸️' : '📢';
     }
 
     function toggleMarqueePause() {
@@ -945,7 +982,7 @@
         track.textContent = '';
         lastRenderedNoticeText = '';
         track.style.animation = 'none';
-        document.getElementById('noticeStateTag').textContent = '공지';
+        document.getElementById('noticeIcon').textContent = '📢';
         return;
       }
       const latest = notices[0];
@@ -960,10 +997,10 @@
       syncMarqueePausedUI();
     }
 
+    // --- 오늘 기록 렌더링 ---
     function renderDateBar() {
-      document.getElementById('dateDisplay').textContent = formatDateKorean(currentDateStr);
-      const todayBtn = document.getElementById('btnToday');
-      todayBtn.classList.toggle('hidden', currentDateStr === getTodayStr());
+      document.getElementById('dateDisplay').textContent = formatDateFull(currentDateStr);
+      document.getElementById('btnToday').classList.toggle('hidden', currentDateStr === getTodayStr());
     }
 
     function renderLectures() {
@@ -999,7 +1036,7 @@
 
     function renderStudyTime() {
       const day = getDayData(currentDateStr);
-      document.getElementById('studyTimeDisplay').textContent = formatMinutes(day.studyMinutes);
+      document.getElementById('studyTimeDisplay').textContent = formatMinutesPad(day.studyMinutes);
     }
 
     function renderEvaluation() {
@@ -1074,260 +1111,266 @@
       });
     }
 
-    function renderCalendarAndDetail(daysObj, activeEntries) {
+    // --- 월간 달력 & 주/월 평균 렌더링 ---
+    function computeCurrentStreak(daysObj) {
+      let streak = 0;
+      let cursor = getTodayStr();
+      if (!isStudiedDay(daysObj[cursor])) {
+        const yesterday = shiftDate(cursor, -1);
+        if (!isStudiedDay(daysObj[yesterday])) return 0;
+        cursor = yesterday;
+      }
+      while (isStudiedDay(daysObj[cursor])) {
+        streak += 1;
+        cursor = shiftDate(cursor, -1);
+      }
+      return streak;
+    }
+
+    function getHeatClass(mins, lecs, isSelected) {
+      if (isSelected) {
+        return 'bg-white dark:bg-slate-800 border-2 border-[#5b4ef5] shadow-sm';
+      }
+      const score = mins > 0 ? mins : (lecs * 30);
+      if (score <= 0) return 'bg-slate-50/80 dark:bg-slate-800/40 border border-transparent hover:border-slate-200 dark:hover:border-slate-700';
+      if (score < 60) return 'bg-indigo-100/90 dark:bg-indigo-950/80 border border-indigo-200/60 dark:border-indigo-900';
+      if (score < 150) return 'bg-indigo-200/90 dark:bg-indigo-800/70 border border-indigo-300/60 dark:border-indigo-700';
+      if (score < 300) return 'bg-indigo-400/90 dark:bg-indigo-600/80 text-white border border-indigo-400';
+      return 'bg-[#5b4ef5] dark:bg-indigo-500 text-white border border-[#5b4ef5]';
+    }
+
+    function renderSelectedDateCard(daysObj) {
+      document.getElementById('selectedDateTitle').textContent = formatDateFull(selectedCalendarDateStr);
+      const body = document.getElementById('selectedDateBody');
+      body.innerHTML = '';
+
+      const d = daysObj[selectedCalendarDateStr];
+      if (!hasAnyRecord(d)) {
+        const p = document.createElement('p');
+        p.className = 'text-center py-4 text-xs text-slate-400';
+        p.textContent = '아직 기록이 없는 날이에요. 위 버튼을 눌러 기록해 보세요!';
+        body.appendChild(p);
+        return;
+      }
+
+      const badges = document.createElement('div');
+      badges.className = 'flex flex-wrap gap-1.5 mb-2';
+      const items = [
+        `⏱️ ${formatMinutesCumulative(d.studyMinutes)}`,
+        `✏️ ${Number(d.lectureDone) || 0}/${Number(d.lectureGoal) || 5}강`,
+        `👍 ${Number(d.goodScore) || 0}/5`,
+        `👎 ${Number(d.badScore) || 0}/5`
+      ];
+      items.forEach((txt) => {
+        const sp = document.createElement('span');
+        sp.className = 'px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] font-bold';
+        sp.textContent = txt;
+        badges.appendChild(sp);
+      });
+      body.appendChild(badges);
+
+      if (d.goodReason) {
+        const p = document.createElement('p');
+        p.className = 'text-xs text-emerald-700 dark:text-emerald-300 mt-1 break-words';
+        p.textContent = `👍 잘한 점: ${d.goodReason}`;
+        body.appendChild(p);
+      }
+      if (d.badReason) {
+        const p = document.createElement('p');
+        p.className = 'text-xs text-rose-600 dark:text-rose-300 mt-1 break-words';
+        p.textContent = `👎 아쉬운 점: ${d.badReason}`;
+        body.appendChild(p);
+      }
+      if (Array.isArray(d.foods) && d.foods.length > 0) {
+        const p = document.createElement('p');
+        p.className = 'text-xs text-amber-700 dark:text-amber-300 mt-1 break-words';
+        p.textContent = `🍽️ 먹고 싶은 음식: ${d.foods.join(', ')}`;
+        body.appendChild(p);
+      }
+    }
+
+    function renderMonthly() {
       const [y, m] = currentMonthStr.split('-').map(Number);
-      const firstDayOfWeek = new Date(y, m - 1, 1).getDay();
       const daysInMonth = new Date(y, m, 0).getDate();
+      const firstDow = new Date(y, m - 1, 1).getDay();
       const todayStr = getTodayStr();
+      const daysObj = appState.days || {};
+
+      document.getElementById('monthDisplay').textContent = formatMonthKorean(currentMonthStr);
+      const isCurrentMonth = currentMonthStr === todayStr.slice(0, 7);
+      document.getElementById('btnThisMonth').classList.toggle('opacity-50', isCurrentMonth);
 
       if (!selectedCalendarDateStr || !selectedCalendarDateStr.startsWith(currentMonthStr + '-')) {
-        if (todayStr.startsWith(currentMonthStr + '-')) {
-          selectedCalendarDateStr = todayStr;
-        } else if (activeEntries.length > 0) {
-          selectedCalendarDateStr = activeEntries[0][0];
-        } else {
-          selectedCalendarDateStr = `${currentMonthStr}-01`;
+        selectedCalendarDateStr = isCurrentMonth ? todayStr : `${currentMonthStr}-01`;
+      }
+
+      // 1. 연속 공부 기록 & 이달의 최고 기록
+      const streak = computeCurrentStreak(daysObj);
+      document.getElementById('streakDisplay').textContent = `🔥 ${streak}일 연속 공부 중`;
+
+      let bestMins = 0;
+      let bestDate = '';
+      let monthTotalMins = 0;
+      let monthTotalLecs = 0;
+      let monthStudiedDays = 0;
+
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const dStr = `${y}-${String(m).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        const rec = daysObj[dStr];
+        if (rec) {
+          const mins = Number(rec.studyMinutes) || 0;
+          const lecs = Number(rec.lectureDone) || 0;
+          monthTotalMins += mins;
+          monthTotalLecs += lecs;
+          if (isStudiedDay(rec)) monthStudiedDays += 1;
+          if (mins > bestMins) {
+            bestMins = mins;
+            bestDate = `${m}/${dayNum}`;
+          }
         }
       }
 
+      document.getElementById('bestDayDisplay').textContent = bestMins > 0
+        ? `🏆 ${bestDate} · ${formatMinutesShort(bestMins)}`
+        : '🏆 기록 없음';
+
+      // 2. 달력 그리드
       const calGrid = document.getElementById('calendarGrid');
       calGrid.innerHTML = '';
 
-      for (let i = 0; i < firstDayOfWeek; i++) {
-        const blank = document.createElement('div');
-        blank.className = 'h-12';
-        calGrid.appendChild(blank);
+      for (let i = 0; i < firstDow; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'h-12';
+        calGrid.appendChild(empty);
       }
 
       for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
         const dStr = `${y}-${String(m).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-        const dayRecord = daysObj[dStr];
-        const hasRec = hasDayActivity(dayRecord);
+        const dow = (firstDow + dayNum - 1) % 7;
+        const rec = daysObj[dStr];
+        const mins = rec ? (Number(rec.studyMinutes) || 0) : 0;
+        const lecs = rec ? (Number(rec.lectureDone) || 0) : 0;
         const isSelected = dStr === selectedCalendarDateStr;
         const isToday = dStr === todayStr;
 
         const cell = document.createElement('button');
         cell.type = 'button';
-        cell.className = `h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs border transition tap-pop ${
-          isSelected
-            ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-sm'
-            : isToday
-              ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 font-bold text-indigo-700 dark:text-indigo-200'
-              : 'bg-slate-50/70 dark:bg-slate-800/50 border-transparent hover:border-slate-200 dark:hover:border-slate-700'
-        }`;
+        cell.className = `h-12 rounded-2xl flex flex-col items-center justify-start pt-1.5 transition tap-pop ${getHeatClass(mins, lecs, isSelected)}`;
 
-        const numSpan = document.createElement('span');
-        numSpan.className = 'leading-none';
-        numSpan.textContent = String(dayNum);
-        cell.appendChild(numSpan);
+        const top = document.createElement('div');
+        top.className = 'flex items-center justify-center gap-0.5 leading-none';
 
-        const dotRow = document.createElement('div');
-        dotRow.className = 'h-2.5 flex items-center justify-center gap-0.5';
-        if (hasRec) {
-          const mins = Number(dayRecord.studyMinutes) || 0;
-          const lecs = Number(dayRecord.lectureDone) || 0;
-          const badge = document.createElement('span');
-          badge.className = `text-[9px] leading-none font-bold ${
-            isSelected ? 'text-indigo-100' : 'text-indigo-600 dark:text-indigo-300'
-          }`;
-          if (mins > 0) {
-            const hrs = (mins / 60);
-            badge.textContent = hrs >= 1 ? `${hrs.toFixed(1).replace(/\.0$/, '')}h` : `${mins}m`;
-          } else if (lecs > 0) {
-            badge.textContent = `${lecs}강`;
-          } else {
-            badge.textContent = '●';
-          }
-          dotRow.appendChild(badge);
+        const numEl = document.createElement('span');
+        let numColor = '';
+        if (!isSelected && (mins >= 150 || (mins === 0 && lecs >= 5))) {
+          numColor = 'text-white';
+        } else if (dow === 0) {
+          numColor = 'text-rose-500';
+        } else if (dow === 6) {
+          numColor = 'text-sky-500';
+        } else {
+          numColor = 'text-slate-700 dark:text-slate-200';
         }
-        cell.appendChild(dotRow);
+        numEl.className = `text-xs font-bold ${numColor}`;
+        numEl.textContent = String(dayNum);
+        top.appendChild(numEl);
+
+        if (isToday) {
+          const dot = document.createElement('span');
+          dot.className = 'w-1.5 h-1.5 rounded-full bg-[#5b4ef5] dark:bg-indigo-300';
+          top.appendChild(dot);
+        }
+        cell.appendChild(top);
+
+        if (mins > 0 || lecs > 0) {
+          const sub = document.createElement('span');
+          const darkFill = !isSelected && (mins >= 150 || (mins === 0 && lecs >= 5));
+          sub.className = `text-[9px] font-bold mt-1 leading-none ${darkFill ? 'text-indigo-100' : 'text-indigo-600 dark:text-indigo-300'}`;
+          sub.textContent = mins > 0
+            ? (mins >= 60 ? `${(mins / 60).toFixed(1).replace(/\.0$/, '')}h` : `${mins}m`)
+            : `${lecs}강`;
+          cell.appendChild(sub);
+        }
 
         cell.addEventListener('click', () => {
           selectedCalendarDateStr = dStr;
-          renderCalendarAndDetail(daysObj, activeEntries);
+          renderMonthly();
         });
-
         calGrid.appendChild(cell);
       }
 
-      // 선택 날짜 상세 미리보기
-      const detailBox = document.getElementById('calendarSelectedDetail');
-      detailBox.innerHTML = '';
-      const selData = daysObj[selectedCalendarDateStr] || {};
-      const selHas = hasDayActivity(selData);
+      // 3. 선택 날짜 상세 카드
+      renderSelectedDateCard(daysObj);
 
-      const headerRow = document.createElement('div');
-      headerRow.className = 'flex items-center justify-between gap-2';
-
-      const selTitle = document.createElement('span');
-      selTitle.className = 'text-xs font-bold';
-      selTitle.textContent = formatDateKorean(selectedCalendarDateStr);
-
-      const openBtn = document.createElement('button');
-      openBtn.type = 'button';
-      openBtn.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 tap-pop';
-      openBtn.textContent = '오늘 기록에서 열기 ›';
-      openBtn.addEventListener('click', () => {
-        currentDateStr = selectedCalendarDateStr;
-        renderTodayAll();
-        applyTab('today');
-      });
-
-      headerRow.appendChild(selTitle);
-      headerRow.appendChild(openBtn);
-      detailBox.appendChild(headerRow);
-
-      if (!selHas) {
-        const emptyMsg = document.createElement('p');
-        emptyMsg.className = 'text-[11px] text-slate-400 mt-1.5';
-        emptyMsg.textContent = '이 날짜에 기록된 공부 내용이 없습니다.';
-        detailBox.appendChild(emptyMsg);
-      } else {
-        const summaryLine = document.createElement('p');
-        summaryLine.className = 'text-[11px] text-slate-600 dark:text-slate-300 mt-1.5';
-        summaryLine.textContent = `⏱️ ${formatMinutes(selData.studyMinutes)} · ✏️ ${Number(selData.lectureDone) || 0}/${Number(selData.lectureGoal) || 5}강 · 👍 ${Number(selData.goodScore) || 0}/5 · 👎 ${Number(selData.badScore) || 0}/5`;
-        detailBox.appendChild(summaryLine);
-
-        if (selData.goodReason) {
-          const gReason = document.createElement('p');
-          gReason.className = 'text-[11px] text-emerald-700 dark:text-emerald-300 mt-1 break-words';
-          gReason.textContent = `잘한 점: ${selData.goodReason}`;
-          detailBox.appendChild(gReason);
+      // 4. 주 단위 하루 평균 기록 (일~토 기준 주차 분할)
+      const weeks = [];
+      let curWeek = null;
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const dow = (firstDow + dayNum - 1) % 7;
+        if (!curWeek || dow === 0) {
+          curWeek = { startDay: dayNum, endDay: dayNum, totalDays: 0, studiedDays: 0, mins: 0, lecs: 0 };
+          weeks.push(curWeek);
         }
-        if (selData.badReason) {
-          const bReason = document.createElement('p');
-          bReason.className = 'text-[11px] text-rose-600 dark:text-rose-300 mt-0.5 break-words';
-          bReason.textContent = `아쉬운 점: ${selData.badReason}`;
-          detailBox.appendChild(bReason);
-        }
-        if (Array.isArray(selData.foods) && selData.foods.length > 0) {
-          const fLine = document.createElement('p');
-          fLine.className = 'text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 break-words';
-          fLine.textContent = `🍽️ ${selData.foods.join(', ')}`;
-          detailBox.appendChild(fLine);
+        curWeek.endDay = dayNum;
+        curWeek.totalDays += 1;
+        const dStr = `${y}-${String(m).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        const rec = daysObj[dStr];
+        if (rec) {
+          curWeek.mins += Number(rec.studyMinutes) || 0;
+          curWeek.lecs += Number(rec.lectureDone) || 0;
+          if (isStudiedDay(rec)) curWeek.studiedDays += 1;
         }
       }
-    }
 
-    function renderMonthly() {
-      document.getElementById('monthDisplay').textContent = formatMonthKorean(currentMonthStr);
-      document.getElementById('btnThisMonth').classList.toggle('hidden', currentMonthStr === getTodayStr().slice(0, 7));
+      const weeklyAvgs = weeks.map((w) => {
+        const denom = avgMode === 'studied' ? w.studiedDays : w.totalDays;
+        return {
+          ...w,
+          avgMins: denom > 0 ? w.mins / denom : 0,
+          avgLecs: denom > 0 ? w.lecs / denom : 0
+        };
+      });
+      const maxWeekAvgMins = Math.max(60, ...weeklyAvgs.map((w) => w.avgMins));
 
-      const daysObj = appState.days || {};
-      const entries = Object.entries(daysObj)
-        .filter(([dStr, d]) => dStr.startsWith(currentMonthStr + '-') && hasDayActivity(d))
-        .sort((a, b) => b[0].localeCompare(a[0]));
+      const weeklyList = document.getElementById('weeklyList');
+      weeklyList.innerHTML = '';
+      weeklyAvgs.forEach((w, idx) => {
+        const card = document.createElement('div');
+        card.className = 'rounded-2xl p-3.5 bg-slate-50/90 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2';
 
-      let totalMins = 0;
-      let totalLectures = 0;
-      let goodSum = 0;
-      let goodCnt = 0;
-      let badSum = 0;
-      let badCnt = 0;
+        const pct = w.avgMins > 0 ? Math.min(100, Math.round((w.avgMins / maxWeekAvgMins) * 100)) : 0;
 
-      entries.forEach(([, d]) => {
-        totalMins += Number(d.studyMinutes) || 0;
-        totalLectures += Number(d.lectureDone) || 0;
-        if ((Number(d.goodScore) || 0) > 0) {
-          goodSum += Number(d.goodScore);
-          goodCnt += 1;
-        }
-        if ((Number(d.badScore) || 0) > 0) {
-          badSum += Number(d.badScore);
-          badCnt += 1;
-        }
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">${idx + 1}주차</span>
+              <span class="text-[11px] text-slate-400">${m}/${w.startDay}~${m}/${w.endDay}</span>
+            </div>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+              ${w.studiedDays}일 공부
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-600 dark:text-slate-300">⏱️ 일평균 <b class="text-slate-900 dark:text-white">${formatMinutesShort(w.avgMins)}</b></span>
+            <span class="text-slate-600 dark:text-slate-300">✏️ 일평균 <b class="text-slate-900 dark:text-white">${w.avgLecs.toFixed(1)}강</b></span>
+          </div>
+          <div class="h-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-[#5b4ef5] to-[#7c3aed] transition-all duration-300" style="width: ${pct}%"></div>
+          </div>
+        `;
+        weeklyList.appendChild(card);
       });
 
-      const dayCount = entries.length;
-      document.getElementById('monthlyTotalTime').textContent = formatMinutes(totalMins);
-      document.getElementById('monthlyAvgTime').textContent = dayCount > 0
-        ? `기록일 평균 ${formatMinutes(totalMins / dayCount)}`
-        : '기록일 평균 0시간 00분';
+      // 5. 월 단위 하루 평균 기록
+      const monthDenom = avgMode === 'studied' ? monthStudiedDays : daysInMonth;
+      const monthAvgMins = monthDenom > 0 ? monthTotalMins / monthDenom : 0;
+      const monthAvgLecs = monthDenom > 0 ? monthTotalLecs / monthDenom : 0;
 
-      document.getElementById('monthlyTotalLectures').textContent = `${totalLectures}강`;
-      document.getElementById('monthlyAvgLectures').textContent = dayCount > 0
-        ? `기록일 평균 ${(totalLectures / dayCount).toFixed(1)}강`
-        : '기록일 평균 0.0강';
-
-      document.getElementById('monthlyAvgGood').textContent = goodCnt > 0 ? `${(goodSum / goodCnt).toFixed(1)} / 5` : '0.0 / 5';
-      document.getElementById('monthlyAvgBad').textContent = badCnt > 0 ? `${(badSum / badCnt).toFixed(1)} / 5` : '0.0 / 5';
-      document.getElementById('monthlyDaysCount').textContent = `${dayCount}일 기록됨`;
-
-      renderCalendarAndDetail(daysObj, entries);
-
-      const listEl = document.getElementById('monthlyDayList');
-      listEl.innerHTML = '';
-
-      if (entries.length === 0) {
-        const emptyCard = document.createElement('div');
-        emptyCard.className = 'bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 text-center text-xs text-slate-400';
-        emptyCard.textContent = '해당 월에 작성된 공부 기록이 없습니다.';
-        listEl.appendChild(emptyCard);
-        return;
-      }
-
-      entries.forEach(([dStr, d]) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'w-full text-left bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm transition space-y-2 tap-pop';
-
-        const topRow = document.createElement('div');
-        topRow.className = 'flex items-center justify-between gap-2';
-
-        const dateEl = document.createElement('span');
-        dateEl.className = 'text-xs font-bold text-slate-800 dark:text-slate-100';
-        dateEl.textContent = formatDateKorean(dStr);
-
-        const rightBadges = document.createElement('div');
-        rightBadges.className = 'flex items-center gap-1.5 shrink-0';
-
-        const lecBadge = document.createElement('span');
-        lecBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300';
-        lecBadge.textContent = `✏️ ${Number(d.lectureDone) || 0}/${Number(d.lectureGoal) || 5}강`;
-
-        const timeBadge = document.createElement('span');
-        timeBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200';
-        timeBadge.textContent = formatMinutes(d.studyMinutes);
-
-        rightBadges.appendChild(lecBadge);
-        rightBadges.appendChild(timeBadge);
-        topRow.appendChild(dateEl);
-        topRow.appendChild(rightBadges);
-        card.appendChild(topRow);
-
-        const evalRow = document.createElement('div');
-        evalRow.className = 'flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300';
-        const gText = `👍 ${Number(d.goodScore) || 0}/5${d.goodReason ? ' · ' + d.goodReason : ''}`;
-        const bText = `👎 ${Number(d.badScore) || 0}/5${d.badReason ? ' · ' + d.badReason : ''}`;
-
-        const gSpan = document.createElement('span');
-        gSpan.className = 'truncate max-w-full';
-        gSpan.textContent = gText;
-        evalRow.appendChild(gSpan);
-
-        if ((Number(d.badScore) || 0) > 0 || d.badReason) {
-          const bSpan = document.createElement('span');
-          bSpan.className = 'truncate max-w-full text-rose-500 dark:text-rose-400';
-          bSpan.textContent = bText;
-          evalRow.appendChild(bSpan);
-        }
-        card.appendChild(evalRow);
-
-        if (Array.isArray(d.foods) && d.foods.length > 0) {
-          const foodRow = document.createElement('div');
-          foodRow.className = 'text-[11px] text-amber-700 dark:text-amber-300 truncate';
-          foodRow.textContent = `🍽️ ${d.foods.join(', ')}`;
-          card.appendChild(foodRow);
-        }
-
-        card.addEventListener('click', () => {
-          currentDateStr = dStr;
-          renderTodayAll();
-          applyTab('today');
-        });
-
-        listEl.appendChild(card);
-      });
+      document.getElementById('monthlyDaysPill').textContent = `${monthStudiedDays}일 / ${daysInMonth}일`;
+      document.getElementById('monthlyAvgTimeVal').textContent = formatMinutesShort(monthAvgMins);
+      document.getElementById('monthlyAvgLecVal').textContent = `${monthAvgLecs.toFixed(1)}강`;
+      document.getElementById('monthlyTotalTimeVal').textContent = formatMinutesCumulative(monthTotalMins);
+      document.getElementById('monthlyTotalLecVal').textContent = `${monthTotalLecs}강`;
     }
 
     function renderNoticeHistory() {
@@ -1389,9 +1432,7 @@
 
     function renderAll() {
       renderTodayAll();
-      if (activeTab === 'monthly') {
-        renderMonthly();
-      }
+      if (activeTab === 'monthly') renderMonthly();
     }
 
     // --- Firebase 모달 제어 ---
@@ -1417,7 +1458,6 @@
     }
 
     document.getElementById('btnOpenFirebaseModal').addEventListener('click', openFirebaseModal);
-    document.getElementById('btnSyncBadge').addEventListener('click', openFirebaseModal);
 
     document.getElementById('btnConnectFirebase').addEventListener('click', async () => {
       const urlVal = normalizeDbUrl(document.getElementById('fbUrlInput').value);
@@ -1437,7 +1477,7 @@
       document.getElementById('btnDisconnectFirebase').classList.remove('hidden');
       document.getElementById('btnCopyShareLink').classList.remove('hidden');
       if (ok) {
-        showFbMsg(`방 '${roomVal}' 연결 완료!`);
+        showFbMsg(`방 '${roomVal}' 연결 완료! (경로: ${BASE_PATH})`);
       } else {
         showFbMsg('연결에 실패했습니다. Firebase 규칙(.read/.write)을 확인해 주세요.', true);
       }
@@ -1493,11 +1533,18 @@
     document.getElementById('tabTodayView').addEventListener('click', () => applyTab('today'));
     document.getElementById('tabMonthlyView').addEventListener('click', () => applyTab('monthly'));
 
-    // 공지 터치 / 버튼으로 멈춤·재생 토글
+    document.getElementById('btnAvgModeStudied').addEventListener('click', () => applyAvgMode('studied'));
+    document.getElementById('btnAvgModeAll').addEventListener('click', () => applyAvgMode('all'));
+
+    document.getElementById('btnEditSelectedDate').addEventListener('click', () => {
+      currentDateStr = selectedCalendarDateStr;
+      renderTodayAll();
+      applyTab('today');
+    });
+
     document.getElementById('marqueeWrap').addEventListener('click', toggleMarqueePause);
     document.getElementById('btnNoticePauseToggle').addEventListener('click', toggleMarqueePause);
 
-    // 공지 쓰기 모달
     document.getElementById('btnOpenNoticeWrite').addEventListener('click', () => {
       const input = document.getElementById('noticeInput');
       input.value = '';
@@ -1524,20 +1571,17 @@
       if (e.key === 'Enter') submitNotice();
     });
 
-    // 공지 기록 모달
     document.getElementById('btnOpenNoticeHistory').addEventListener('click', () => {
       renderNoticeHistory();
       document.getElementById('modalNoticeHistory').classList.remove('hidden');
     });
 
-    // 모달 닫기 공통
     document.querySelectorAll('[data-close-modal]').forEach((btn) => {
       btn.addEventListener('click', () => {
         document.getElementById(btn.dataset.closeModal).classList.add('hidden');
       });
     });
 
-    // 날짜 이동
     document.getElementById('btnPrevDate').addEventListener('click', () => {
       currentDateStr = shiftDate(currentDateStr, -1);
       renderTodayAll();
@@ -1551,7 +1595,6 @@
       renderTodayAll();
     });
 
-    // 월별 이동
     document.getElementById('btnPrevMonth').addEventListener('click', () => {
       currentMonthStr = shiftMonth(currentMonthStr, -1);
       selectedCalendarDateStr = '';
@@ -1568,7 +1611,6 @@
       renderMonthly();
     });
 
-    // 목표 강의 수 조절
     document.getElementById('btnGoalMinus').addEventListener('click', () => {
       const day = getDayData(currentDateStr);
       if (day.lectureGoal > 1) {
@@ -1587,7 +1629,6 @@
       }
     });
 
-    // 공부 시간 빠른 추가
     document.querySelectorAll('.btn-add-time').forEach((btn) => {
       btn.addEventListener('click', () => {
         const delta = Number(btn.dataset.addMin);
@@ -1598,7 +1639,6 @@
       });
     });
 
-    // 공부 시간 직접 입력 모달
     document.getElementById('btnDirectTime').addEventListener('click', () => {
       const day = getDayData(currentDateStr);
       const total = Math.max(0, Number(day.studyMinutes) || 0);
@@ -1616,7 +1656,6 @@
       document.getElementById('modalDirectTime').classList.add('hidden');
     });
 
-    // 스톱워치 토글/조작
     document.getElementById('btnToggleStopwatch').addEventListener('click', () => {
       document.getElementById('stopwatchBox').classList.toggle('hidden');
     });
@@ -1650,7 +1689,6 @@
       renderStudyTime();
     });
 
-    // 평가 이유 자동 저장
     function bindReasonInput(id, field) {
       document.getElementById(id).addEventListener('input', (e) => {
         const day = getDayData(currentDateStr);
@@ -1662,7 +1700,6 @@
     bindReasonInput('goodReasonInput', 'goodReason');
     bindReasonInput('badReasonInput', 'badReason');
 
-    // 내일 먹고 싶은 음식 추가
     document.getElementById('foodForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const input = document.getElementById('foodInput');
@@ -1675,7 +1712,6 @@
       renderFoods();
     });
 
-    // Service Worker 등록
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch((err) => {
@@ -1684,11 +1720,11 @@
       });
     }
 
-    // 초기화 실행
     initTheme();
     loadFirebaseSettings();
     loadLocalState();
     renderTodayAll();
+    applyAvgMode(avgMode);
     applyTab(activeTab);
     connectFirebase();
   </script>
