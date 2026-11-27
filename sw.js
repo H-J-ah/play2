@@ -1,4 +1,4 @@
-const CACHE_NAME = 'study-raccoon-v2';
+const CACHE_NAME = 'study-raccoon-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',
