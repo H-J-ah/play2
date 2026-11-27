@@ -37,16 +37,18 @@
       position: relative;
       cursor: pointer;
       user-select: none;
+      touch-action: manipulation;
     }
     .marquee-track {
       display: inline-block;
       white-space: nowrap;
       padding-left: 100%;
       animation: marquee-scroll 14s linear infinite;
+      animation-play-state: running;
       will-change: transform;
     }
     .marquee-track.paused {
-      animation-play-state: paused;
+      animation-play-state: paused !important;
     }
     @keyframes marquee-scroll {
       0% { transform: translateX(0); }
@@ -64,12 +66,17 @@
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200">
 
-  <!-- 상단 공지 전광판 -->
-  <div class="sticky top-0 z-30 bg-indigo-600 dark:bg-indigo-900 text-white shadow-sm">
-    <div class="max-w-md mx-auto flex items-center gap-2 px-3 py-2">
-      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 shrink-0">📢 공지</span>
+  <!-- 상단 공지 전광판 (위 여백 확보) -->
+  <div class="sticky top-0 z-30 pt-2.5 px-3 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm">
+    <div class="max-w-md mx-auto bg-indigo-600 dark:bg-indigo-900 text-white rounded-2xl shadow-sm flex items-center gap-2 px-3 py-2">
+      <button id="btnNoticePauseToggle" type="button"
+        class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 shrink-0 flex items-center gap-1 tap-pop"
+        title="공지 멈춤/재생">
+        <span>📢</span>
+        <span id="noticeStateTag">공지</span>
+      </button>
 
-      <div id="marqueeWrap" class="marquee-wrap flex-1 min-w-0 h-6 flex items-center" title="터치해서 멈춤/재생">
+      <div id="marqueeWrap" class="marquee-wrap flex-1 min-w-0 h-6 flex items-center" role="button" tabindex="0" aria-label="공지 터치해서 멈춤 또는 재생">
         <div id="marqueeTrack" class="marquee-track text-sm font-medium"></div>
       </div>
 
@@ -85,9 +92,9 @@
   </div>
 
   <!-- 메인 컨테이너 -->
-  <main class="max-w-md mx-auto px-4 pt-4 pb-10 space-y-4">
+  <main class="max-w-md mx-auto px-4 pt-3.5 pb-10 space-y-4">
 
-    <!-- 헤더: 앱 타이틀 + 실시간 동기화 상태 + 연결 설정 + 다크모드 -->
+    <!-- 헤더: 앱 타이틀 + 실시간 동기화 상태 + 공유 설정 + 다크모드 -->
     <header class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5 min-w-0">
         <img src="./icon-192.png" alt="열공 너구리" class="w-9 h-9 rounded-xl shadow-sm object-cover bg-indigo-100 shrink-0" />
@@ -113,159 +120,230 @@
       </div>
     </header>
 
-    <!-- 날짜 선택 바 -->
-    <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
-      <button id="btnPrevDate" type="button"
-        class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-        ‹
+    <!-- 상단 탭: 오늘 기록 / 월별 기록 -->
+    <nav class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
+      <button id="tabTodayView" type="button"
+        class="py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition">
+        오늘 기록
       </button>
-      <div class="flex items-center gap-2">
-        <span id="dateDisplay" class="text-sm font-bold tracking-tight"></span>
-        <button id="btnToday" type="button"
-          class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
-          오늘
-        </button>
-      </div>
-      <button id="btnNextDate" type="button"
-        class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
-        ›
+      <button id="tabMonthlyView" type="button"
+        class="py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition">
+        월별 기록
       </button>
-    </section>
+    </nav>
 
-    <!-- 1. 오늘 들은 강의 수 -->
-    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
+    <!-- ==================== 오늘 기록 탭 ==================== -->
+    <div id="viewToday" class="space-y-4">
+
+      <!-- 날짜 선택 바 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <button id="btnPrevDate" type="button"
+          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+          ‹
+        </button>
         <div class="flex items-center gap-2">
-          <h2 class="text-sm font-bold">오늘 들은 강의 수</h2>
-          <span id="lectureCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
-            0 / 5강
-          </span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-[11px] text-slate-400">목표</span>
-          <button id="btnGoalMinus" type="button"
-            class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
-            -
-          </button>
-          <span id="lectureGoalText" class="text-xs font-bold w-4 text-center">5</span>
-          <button id="btnGoalPlus" type="button"
-            class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
-            +
+          <span id="dateDisplay" class="text-sm font-bold tracking-tight"></span>
+          <button id="btnToday" type="button"
+            class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
+            오늘
           </button>
         </div>
-      </div>
-
-      <div id="lectureGrid" class="flex flex-wrap gap-2"></div>
-    </section>
-
-    <!-- 2. 오늘 총 공부 시간 & 스톱워치 -->
-    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-sm font-bold">오늘 총 공부 시간</h2>
-        <button id="btnToggleStopwatch" type="button"
-          class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-          ⏱️ 스톱워치
+        <button id="btnNextDate" type="button"
+          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+          ›
         </button>
-      </div>
+      </section>
 
-      <div class="flex items-baseline justify-between mb-3">
-        <div id="studyTimeDisplay" class="text-2xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
-          0시간 00분
+      <!-- 1. 오늘 들은 강의 수 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold">오늘 들은 강의 수</h2>
+            <span id="lectureCountBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+              0 / 5강
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-slate-400">목표</span>
+            <button id="btnGoalMinus" type="button"
+              class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
+              -
+            </button>
+            <span id="lectureGoalText" class="text-xs font-bold w-4 text-center">5</span>
+            <button id="btnGoalPlus" type="button"
+              class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center tap-pop">
+              +
+            </button>
+          </div>
         </div>
-        <button id="btnDirectTime" type="button"
-          class="text-xs font-medium text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-indigo-500">
-          직접 입력
-        </button>
-      </div>
 
-      <div class="grid grid-cols-4 gap-1.5">
-        <button data-add-min="10" type="button"
-          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
-          +10분
-        </button>
-        <button data-add-min="30" type="button"
-          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
-          +30분
-        </button>
-        <button data-add-min="60" type="button"
-          class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
-          +1시간
-        </button>
-        <button data-add-min="-10" type="button"
-          class="btn-add-time py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
-          -10분
-        </button>
-      </div>
+        <div id="lectureGrid" class="flex flex-wrap gap-2"></div>
+      </section>
 
-      <!-- 접이식 스톱워치 -->
-      <div id="stopwatchBox" class="hidden mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-        <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">실시간 측정</span>
-          <span id="swDisplay" class="font-mono text-lg font-bold tracking-wider">00:00:00</span>
-        </div>
-        <div class="grid grid-cols-3 gap-1.5">
-          <button id="btnSwToggle" type="button"
-            class="py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop">
-            시작
-          </button>
-          <button id="btnSwReset" type="button"
-            class="py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
-            초기화
-          </button>
-          <button id="btnSwApply" type="button"
-            class="py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold tap-pop">
-            시간 반영
+      <!-- 2. 오늘 총 공부 시간 & 스톱워치 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold">오늘 총 공부 시간</h2>
+          <button id="btnToggleStopwatch" type="button"
+            class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            ⏱️ 스톱워치
           </button>
         </div>
-      </div>
-    </section>
 
-    <!-- 3. 오늘 공부 평가 -->
-    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
-      <h2 class="text-sm font-bold">오늘 공부 평가</h2>
-
-      <!-- 잘한 점 -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
-            잘한 점 <span id="goodScoreText">0</span>/5
-          </span>
-          <div id="goodThumbs" class="flex items-center gap-1 shrink-0"></div>
+        <div class="flex items-baseline justify-between mb-3">
+          <div id="studyTimeDisplay" class="text-2xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
+            0시간 00분
+          </div>
+          <button id="btnDirectTime" type="button"
+            class="text-xs font-medium text-slate-500 dark:text-slate-400 underline underline-offset-2 hover:text-indigo-500">
+            직접 입력
+          </button>
         </div>
-        <input id="goodReasonInput" type="text" maxlength="100" placeholder="잘했던 이유를 간단히 적어보세요"
-          class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
-      </div>
 
-      <div class="border-t border-slate-100 dark:border-slate-800"></div>
-
-      <!-- 아쉬웠던 점 -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <span class="text-xs font-bold text-rose-500 dark:text-rose-400 whitespace-nowrap shrink-0">
-            아쉬웠던 점 <span id="badScoreText">0</span>/5
-          </span>
-          <div id="badThumbs" class="flex items-center gap-1 shrink-0"></div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button data-add-min="10" type="button"
+            class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+            +10분
+          </button>
+          <button data-add-min="30" type="button"
+            class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+            +30분
+          </button>
+          <button data-add-min="60" type="button"
+            class="btn-add-time py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold tap-pop">
+            +1시간
+          </button>
+          <button data-add-min="-10" type="button"
+            class="btn-add-time py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
+            -10분
+          </button>
         </div>
-        <input id="badReasonInput" type="text" maxlength="100" placeholder="아쉬웠던 이유를 간단히 적어보세요"
-          class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400" />
-      </div>
-    </section>
 
-    <!-- 4. 내일 먹고 싶은 음식 -->
-    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
-      <h2 class="text-sm font-bold">🍽️ 내일 먹고 싶은 음식</h2>
+        <!-- 접이식 스톱워치 -->
+        <div id="stopwatchBox" class="hidden mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">실시간 측정</span>
+            <span id="swDisplay" class="font-mono text-lg font-bold tracking-wider">00:00:00</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button id="btnSwToggle" type="button"
+              class="py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop">
+              시작
+            </button>
+            <button id="btnSwReset" type="button"
+              class="py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold tap-pop">
+              초기화
+            </button>
+            <button id="btnSwApply" type="button"
+              class="py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold tap-pop">
+              시간 반영
+            </button>
+          </div>
+        </div>
+      </section>
 
-      <form id="foodForm" class="flex gap-2">
-        <input id="foodInput" type="text" maxlength="30" placeholder="예: 마라탕, 크로플, 국밥..."
-          class="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-        <button type="submit"
-          class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shrink-0 tap-pop">
-          추가
+      <!-- 3. 오늘 공부 평가 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <h2 class="text-sm font-bold">오늘 공부 평가</h2>
+
+        <!-- 잘한 점 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
+              잘한 점 <span id="goodScoreText">0</span>/5
+            </span>
+            <div id="goodThumbs" class="flex items-center gap-1 shrink-0"></div>
+          </div>
+          <input id="goodReasonInput" type="text" maxlength="100" placeholder="잘했던 이유를 간단히 적어보세요"
+            class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+        </div>
+
+        <div class="border-t border-slate-100 dark:border-slate-800"></div>
+
+        <!-- 아쉬웠던 점 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-rose-500 dark:text-rose-400 whitespace-nowrap shrink-0">
+              아쉬웠던 점 <span id="badScoreText">0</span>/5
+            </span>
+            <div id="badThumbs" class="flex items-center gap-1 shrink-0"></div>
+          </div>
+          <input id="badReasonInput" type="text" maxlength="100" placeholder="아쉬웠던 이유를 간단히 적어보세요"
+            class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400" />
+        </div>
+      </section>
+
+      <!-- 4. 내일 먹고 싶은 음식 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
+        <h2 class="text-sm font-bold">🍽️ 내일 먹고 싶은 음식</h2>
+
+        <form id="foodForm" class="flex gap-2">
+          <input id="foodInput" type="text" maxlength="30" placeholder="예: 마라탕, 크로플, 국밥..."
+            class="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          <button type="submit"
+            class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shrink-0 tap-pop">
+            추가
+          </button>
+        </form>
+
+        <div id="foodList" class="flex flex-wrap gap-1.5 empty:hidden"></div>
+      </section>
+    </div>
+
+    <!-- ==================== 월별 기록 탭 ==================== -->
+    <div id="viewMonthly" class="hidden space-y-4">
+
+      <!-- 월 선택 바 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-2.5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <button id="btnPrevMonth" type="button"
+          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+          ‹
         </button>
-      </form>
+        <div class="flex items-center gap-2">
+          <span id="monthDisplay" class="text-sm font-bold tracking-tight"></span>
+          <button id="btnThisMonth" type="button"
+            class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 tap-pop">
+            이번 달
+          </button>
+        </div>
+        <button id="btnNextMonth" type="button"
+          class="w-9 h-9 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 tap-pop">
+          ›
+        </button>
+      </section>
 
-      <div id="foodList" class="flex flex-wrap gap-1.5 empty:hidden"></div>
-    </section>
+      <!-- 월간 요약 카드 -->
+      <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <h2 class="text-sm font-bold mb-3">이번 달 요약</h2>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/50">
+            <div class="text-[11px] text-indigo-600 dark:text-indigo-300 font-medium">총 공부 시간</div>
+            <div id="monthlyTotalTime" class="text-base font-extrabold text-indigo-700 dark:text-indigo-200 mt-0.5">0시간 00분</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-100/90 dark:bg-slate-800/80">
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">총 수강 강의</div>
+            <div id="monthlyTotalLectures" class="text-base font-extrabold text-slate-800 dark:text-slate-100 mt-0.5">0강</div>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40">
+            <div class="text-[11px] text-emerald-600 dark:text-emerald-300 font-medium">평균 잘한 점수</div>
+            <div id="monthlyAvgGood" class="text-sm font-extrabold text-emerald-700 dark:text-emerald-200 mt-0.5">0.0 / 5</div>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/40">
+            <div class="text-[11px] text-rose-500 dark:text-rose-300 font-medium">평균 아쉬운 점수</div>
+            <div id="monthlyAvgBad" class="text-sm font-extrabold text-rose-600 dark:text-rose-200 mt-0.5">0.0 / 5</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 일별 기록 리스트 -->
+      <section class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-sm font-bold">날짜별 기록</h2>
+          <span id="monthlyDaysCount" class="text-xs text-slate-400">0일 기록됨</span>
+        </div>
+        <div id="monthlyDayList" class="space-y-2.5"></div>
+      </section>
+    </div>
 
   </main>
 
@@ -278,13 +356,13 @@
       </div>
 
       <p class="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-        기존 간식/소주 앱에서 쓰던 <b>Firebase Realtime Database URL</b>을 그대로 넣어도 경로가 분리되어(<code>study_raccoon</code>) 충돌 없이 함께 쓸 수 있습니다.
+        Realtime Database URL을 입력해 연결합니다. 기존 간식/소주 앱 DB를 써도 <code>study_raccoon</code> 경로로 따로 저장됩니다.
       </p>
 
       <div class="space-y-2.5">
         <div>
           <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">Database URL</label>
-          <input id="fbUrlInput" type="url" placeholder="https://프로젝트명-default-rtdb.firebaseio.com"
+          <input id="fbUrlInput" type="url" placeholder="https://studycoon-default-rtdb.asia-southeast1.firebasedatabase.app"
             class="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
         <div>
@@ -387,22 +465,18 @@
     </div>
   </div>
 
-  <!-- Firebase SDK (실시간 공유용) -->
+  <!-- Firebase 실시간 동기화 (SDK + REST 폴백 하이브리드) -->
   <script type="module">
     import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getDatabase, ref, onValue, set, onDisconnect, off } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-    // =========================================================================
-    // [선택] 코드에 고정으로 넣어두고 싶다면 아래 두 줄만 채워서 GitHub에 올리세요.
-    // 비워두어도 앱 안의 [🔗 공유] 버튼에서 바로 입력해 연결할 수 있습니다!
-    // =========================================================================
     const DEFAULT_DATABASE_URL = "https://studycoon-default-rtdb.asia-southeast1.firebasedatabase.app";
-    const DEFAULT_ROOM_ID = "1109";  // 친구와 맞출 방 코드
-    // =========================================================================
+    const DEFAULT_ROOM_ID = "1109";
 
     const FB_SETTINGS_KEY = 'study_raccoon_fb_settings';
     const THEME_KEY = 'study_raccoon_theme';
     const CLIENT_ID_KEY = 'study_raccoon_client_id';
+    const TAB_KEY = 'study_raccoon_active_tab';
 
     let clientId = localStorage.getItem(CLIENT_ID_KEY);
     if (!clientId) {
@@ -416,7 +490,9 @@
     let dataRef = null;
     let presenceListRef = null;
     let connectedInfoRef = null;
+    let restPollTimer = null;
     let isFirebaseReady = false;
+    let isRestMode = false;
     let onlineCount = 0;
 
     let appState = {
@@ -425,10 +501,13 @@
     };
 
     let currentDateStr = getTodayStr();
+    let currentMonthStr = getTodayStr().slice(0, 7); // 'YYYY-MM'
+    let activeTab = localStorage.getItem(TAB_KEY) === 'monthly' ? 'monthly' : 'today';
     let isMarqueePaused = false;
     let swTimer = null;
     let swElapsedSec = 0;
     let reasonDebounce = null;
+    let lastRenderedNoticeText = '';
 
     const FOOD_COLORS = [
       'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
@@ -467,11 +546,42 @@
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     }
 
+    function shiftMonth(ymStr, deltaMonths) {
+      const [y, m] = ymStr.split('-').map(Number);
+      const dt = new Date(y, m - 1 + deltaMonths, 1);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+    }
+
     function formatDateKorean(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
       const dt = new Date(y, m - 1, d);
       const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
       return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')} (${weekdays[dt.getDay()]})`;
+    }
+
+    function formatMonthKorean(ymStr) {
+      const [y, m] = ymStr.split('-').map(Number);
+      return `${y}년 ${m}월`;
+    }
+
+    function formatMinutes(mins) {
+      const total = Math.max(0, Number(mins) || 0);
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return `${h}시간 ${String(m).padStart(2, '0')}분`;
+    }
+
+    function normalizeStateShape(raw) {
+      if (!raw || typeof raw !== 'object') {
+        return { notices: [], days: {} };
+      }
+      const noticesArr = Array.isArray(raw.notices)
+        ? raw.notices
+        : (raw.notices && typeof raw.notices === 'object' ? Object.values(raw.notices) : []);
+      return {
+        notices: noticesArr.filter(Boolean),
+        days: raw.days && typeof raw.days === 'object' ? raw.days : {}
+      };
     }
 
     function getDayData(dateStr) {
@@ -508,13 +618,44 @@
       label.textContent = text;
     }
 
-    function saveState() {
+    async function saveState() {
       localStorage.setItem(getLocalKey(), JSON.stringify(appState));
-      if (isFirebaseReady && dataRef) {
-        set(dataRef, appState).catch((err) => {
-          console.error('Firebase 저장 오류:', err);
-          setSyncStatus('error', '저장 실패 (규칙 확인)');
-        });
+      const dbUrl = normalizeDbUrl(fbSettings.databaseURL);
+      const room = sanitizeRoomId(fbSettings.roomId);
+
+      if (!dbUrl) return;
+
+      if (isFirebaseReady && dataRef && !isRestMode) {
+        try {
+          await set(dataRef, appState);
+          updateOnlineLabel(room);
+        } catch (err) {
+          console.warn('SDK 저장 실패, REST 시도:', err);
+          await restPutState(dbUrl, room, appState);
+        }
+      } else if (isRestMode) {
+        await restPutState(dbUrl, room, appState);
+      }
+    }
+
+    async function restGetState(dbUrl, room) {
+      const endpoint = `${dbUrl}/study_raccoon/${encodeURIComponent(room)}/data.json`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return await res.json();
+    }
+
+    async function restPutState(dbUrl, room, payload) {
+      const endpoint = `${dbUrl}/study_raccoon/${encodeURIComponent(room)}/data.json`;
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || { notices: [], days: {} })
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
     }
 
@@ -522,11 +663,7 @@
       try {
         const raw = localStorage.getItem(getLocalKey());
         if (raw) {
-          const parsed = JSON.parse(raw);
-          appState = {
-            notices: Array.isArray(parsed.notices) ? parsed.notices : [],
-            days: parsed.days && typeof parsed.days === 'object' ? parsed.days : {}
-          };
+          appState = normalizeStateShape(JSON.parse(raw));
           return;
         }
       } catch (e) {
@@ -536,7 +673,6 @@
     }
 
     function loadFirebaseSettings() {
-      // 1) URL 파라미터 우선 (?db=...&room=...)
       const params = new URLSearchParams(window.location.search);
       const paramDb = normalizeDbUrl(params.get('db'));
       const paramRoom = params.get('room');
@@ -546,12 +682,10 @@
           roomId: sanitizeRoomId(paramRoom || DEFAULT_ROOM_ID)
         };
         localStorage.setItem(FB_SETTINGS_KEY, JSON.stringify(fbSettings));
-        // 주소창 깔끔하게 정리
         window.history.replaceState({}, document.title, window.location.pathname);
         return;
       }
 
-      // 2) 브라우저에 저장된 설정
       try {
         const saved = JSON.parse(localStorage.getItem(FB_SETTINGS_KEY) || 'null');
         if (saved && saved.databaseURL) {
@@ -563,7 +697,6 @@
         }
       } catch (e) {}
 
-      // 3) 코드 기본값
       fbSettings = {
         databaseURL: normalizeDbUrl(DEFAULT_DATABASE_URL),
         roomId: sanitizeRoomId(DEFAULT_ROOM_ID)
@@ -572,7 +705,12 @@
 
     async function teardownFirebase() {
       isFirebaseReady = false;
+      isRestMode = false;
       onlineCount = 0;
+      if (restPollTimer) {
+        clearInterval(restPollTimer);
+        restPollTimer = null;
+      }
       if (dataRef) { off(dataRef); dataRef = null; }
       if (presenceListRef) { off(presenceListRef); presenceListRef = null; }
       if (connectedInfoRef) { off(connectedInfoRef); connectedInfoRef = null; }
@@ -580,6 +718,51 @@
         try { await deleteApp(fbApp); } catch (e) {}
         fbApp = null;
         fbDb = null;
+      }
+    }
+
+    async function startRestFallback(dbUrl, room) {
+      isRestMode = true;
+      try {
+        const remoteVal = await restGetState(dbUrl, room);
+        isFirebaseReady = true;
+        if (remoteVal) {
+          appState = normalizeStateShape(remoteVal);
+          localStorage.setItem(getLocalKey(), JSON.stringify(appState));
+          renderAll();
+        } else {
+          const hasLocal = (appState.notices && appState.notices.length > 0) ||
+            (appState.days && Object.keys(appState.days).length > 0);
+          if (hasLocal) {
+            await restPutState(dbUrl, room, appState);
+          }
+        }
+        setSyncStatus('online', `방 ${room} · 연결됨`);
+
+        restPollTimer = setInterval(async () => {
+          if (document.hidden) return;
+          try {
+            const latest = await restGetState(dbUrl, room);
+            if (latest) {
+              const nextState = normalizeStateShape(latest);
+              const nextJson = JSON.stringify(nextState);
+              const curJson = JSON.stringify(appState);
+              if (nextJson !== curJson) {
+                appState = nextState;
+                localStorage.setItem(getLocalKey(), nextJson);
+                renderAll();
+              }
+            }
+            setSyncStatus('online', `방 ${room} · 연결됨`);
+          } catch (e) {}
+        }, 3000);
+        return true;
+      } catch (restErr) {
+        console.error('Firebase REST 연결 실패:', restErr);
+        isFirebaseReady = false;
+        isRestMode = false;
+        setSyncStatus('error', '연결 실패 (규칙/URL 확인)');
+        return false;
       }
     }
 
@@ -591,7 +774,7 @@
 
       if (!dbUrl) {
         setSyncStatus('local', '로컬 저장');
-        return;
+        return false;
       }
 
       setSyncStatus('connecting', '연결 중...');
@@ -607,21 +790,20 @@
         connectedInfoRef = ref(fbDb, '.info/connected');
 
         let initialReceived = false;
+        let sdkSucceeded = false;
 
         onValue(
           dataRef,
           (snapshot) => {
+            sdkSucceeded = true;
             isFirebaseReady = true;
+            isRestMode = false;
             const val = snapshot.val();
             if (val) {
-              appState = {
-                notices: Array.isArray(val.notices) ? val.notices : [],
-                days: val.days && typeof val.days === 'object' ? val.days : {}
-              };
+              appState = normalizeStateShape(val);
               localStorage.setItem(getLocalKey(), JSON.stringify(appState));
               renderAll();
             } else if (!initialReceived) {
-              // 서버 방이 비어있고 로컬에 데이터가 있으면 서버로 초기 동기화
               const hasLocal = (appState.notices && appState.notices.length > 0) ||
                 (appState.days && Object.keys(appState.days).length > 0);
               if (hasLocal) {
@@ -631,10 +813,11 @@
             initialReceived = true;
             updateOnlineLabel(room);
           },
-          (err) => {
-            console.error('Firebase 읽기 오류:', err);
-            isFirebaseReady = false;
-            setSyncStatus('error', '연결 실패 (URL/규칙 확인)');
+          async (err) => {
+            console.warn('SDK 리스너 오류, REST 폴백 전환:', err);
+            if (!sdkSucceeded) {
+              await startRestFallback(dbUrl, room);
+            }
           }
         );
 
@@ -648,16 +831,25 @@
         onValue(presenceListRef, (snap) => {
           const val = snap.val();
           onlineCount = val ? Object.keys(val).length : 0;
-          if (isFirebaseReady) updateOnlineLabel(room);
+          if (isFirebaseReady && !isRestMode) updateOnlineLabel(room);
         });
+
+        // 2.5초 내 SDK 응답이 없으면 REST 방식으로 즉시 확인
+        setTimeout(async () => {
+          if (!sdkSucceeded && !isRestMode && fbSettings.databaseURL === dbUrl) {
+            await startRestFallback(dbUrl, room);
+          }
+        }, 2500);
+
+        return true;
       } catch (err) {
-        console.error('Firebase 초기화 실패:', err);
-        setSyncStatus('error', 'URL 형식 오류');
+        console.warn('SDK 초기화 실패, REST 폴백 시도:', err);
+        return await startRestFallback(dbUrl, room);
       }
     }
 
     function updateOnlineLabel(room) {
-      const countText = onlineCount > 0 ? ` · ${onlineCount}명 접속` : '';
+      const countText = onlineCount > 0 ? ` · ${onlineCount}명 접속` : ' · 연결됨';
       setSyncStatus('online', `방 ${room}${countText}`);
     }
 
@@ -674,24 +866,62 @@
       localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
     }
 
-    // --- 렌더링 ---
+    // --- 탭 전환 (오늘 기록 / 월별 기록) ---
+    function applyTab(tabName) {
+      activeTab = tabName === 'monthly' ? 'monthly' : 'today';
+      localStorage.setItem(TAB_KEY, activeTab);
+
+      const isMonthly = activeTab === 'monthly';
+      document.getElementById('viewToday').classList.toggle('hidden', isMonthly);
+      document.getElementById('viewMonthly').classList.toggle('hidden', !isMonthly);
+
+      const todayBtn = document.getElementById('tabTodayView');
+      const monthlyBtn = document.getElementById('tabMonthlyView');
+
+      if (!isMonthly) {
+        todayBtn.className = 'py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition';
+        monthlyBtn.className = 'py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition';
+      } else {
+        monthlyBtn.className = 'py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 shadow-sm transition';
+        todayBtn.className = 'py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition';
+        renderMonthly();
+      }
+    }
+
+    // --- 공지 전광판 (터치 시 멈춤/재개) ---
+    function syncMarqueePausedUI() {
+      const track = document.getElementById('marqueeTrack');
+      const tag = document.getElementById('noticeStateTag');
+      track.classList.toggle('paused', isMarqueePaused);
+      tag.textContent = isMarqueePaused ? '멈춤' : '공지';
+    }
+
+    function toggleMarqueePause() {
+      if (!appState.notices || appState.notices.length === 0) return;
+      isMarqueePaused = !isMarqueePaused;
+      syncMarqueePausedUI();
+    }
+
     function renderNotice() {
       const track = document.getElementById('marqueeTrack');
       const notices = appState.notices || [];
       if (notices.length === 0) {
         track.textContent = '';
+        lastRenderedNoticeText = '';
         track.style.animation = 'none';
+        document.getElementById('noticeStateTag').textContent = '공지';
         return;
       }
       const latest = notices[0];
-      if (track.textContent !== latest.text) {
+      if (lastRenderedNoticeText !== latest.text) {
+        lastRenderedNoticeText = latest.text;
         track.textContent = latest.text;
         track.style.animation = 'none';
         void track.offsetWidth;
         const duration = Math.max(10, Math.min(24, latest.text.length * 0.35 + 8));
         track.style.animation = `marquee-scroll ${duration}s linear infinite`;
       }
-      track.classList.toggle('paused', isMarqueePaused);
+      syncMarqueePausedUI();
     }
 
     function renderDateBar() {
@@ -733,10 +963,7 @@
 
     function renderStudyTime() {
       const day = getDayData(currentDateStr);
-      const total = Math.max(0, Number(day.studyMinutes) || 0);
-      const h = Math.floor(total / 60);
-      const m = total % 60;
-      document.getElementById('studyTimeDisplay').textContent = `${h}시간 ${String(m).padStart(2, '0')}분`;
+      document.getElementById('studyTimeDisplay').textContent = formatMinutes(day.studyMinutes);
     }
 
     function renderEvaluation() {
@@ -811,6 +1038,127 @@
       });
     }
 
+    function renderMonthly() {
+      document.getElementById('monthDisplay').textContent = formatMonthKorean(currentMonthStr);
+      document.getElementById('btnThisMonth').classList.toggle('hidden', currentMonthStr === getTodayStr().slice(0, 7));
+
+      const daysObj = appState.days || {};
+      const entries = Object.entries(daysObj)
+        .filter(([dStr, d]) => {
+          if (!dStr.startsWith(currentMonthStr + '-')) return false;
+          if (!d || typeof d !== 'object') return false;
+          const hasActivity = (Number(d.studyMinutes) || 0) > 0 ||
+            (Number(d.lectureDone) || 0) > 0 ||
+            (Number(d.goodScore) || 0) > 0 ||
+            (Number(d.badScore) || 0) > 0 ||
+            Boolean((d.goodReason || '').trim()) ||
+            Boolean((d.badReason || '').trim()) ||
+            (Array.isArray(d.foods) && d.foods.length > 0);
+          return hasActivity;
+        })
+        .sort((a, b) => b[0].localeCompare(a[0]));
+
+      let totalMins = 0;
+      let totalLectures = 0;
+      let goodSum = 0;
+      let goodCnt = 0;
+      let badSum = 0;
+      let badCnt = 0;
+
+      entries.forEach(([, d]) => {
+        totalMins += Number(d.studyMinutes) || 0;
+        totalLectures += Number(d.lectureDone) || 0;
+        if ((Number(d.goodScore) || 0) > 0) {
+          goodSum += Number(d.goodScore);
+          goodCnt += 1;
+        }
+        if ((Number(d.badScore) || 0) > 0) {
+          badSum += Number(d.badScore);
+          badCnt += 1;
+        }
+      });
+
+      document.getElementById('monthlyTotalTime').textContent = formatMinutes(totalMins);
+      document.getElementById('monthlyTotalLectures').textContent = `${totalLectures}강`;
+      document.getElementById('monthlyAvgGood').textContent = goodCnt > 0 ? `${(goodSum / goodCnt).toFixed(1)} / 5` : '0.0 / 5';
+      document.getElementById('monthlyAvgBad').textContent = badCnt > 0 ? `${(badSum / badCnt).toFixed(1)} / 5` : '0.0 / 5';
+      document.getElementById('monthlyDaysCount').textContent = `${entries.length}일 기록됨`;
+
+      const listEl = document.getElementById('monthlyDayList');
+      listEl.innerHTML = '';
+
+      if (entries.length === 0) {
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 text-center text-xs text-slate-400';
+        emptyCard.textContent = '해당 월에 작성된 공부 기록이 없습니다.';
+        listEl.appendChild(emptyCard);
+        return;
+      }
+
+      entries.forEach(([dStr, d]) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'w-full text-left bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm transition space-y-2 tap-pop';
+
+        const topRow = document.createElement('div');
+        topRow.className = 'flex items-center justify-between gap-2';
+
+        const dateEl = document.createElement('span');
+        dateEl.className = 'text-xs font-bold text-slate-800 dark:text-slate-100';
+        dateEl.textContent = formatDateKorean(dStr);
+
+        const rightBadges = document.createElement('div');
+        rightBadges.className = 'flex items-center gap-1.5 shrink-0';
+
+        const lecBadge = document.createElement('span');
+        lecBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300';
+        lecBadge.textContent = `✏️ ${Number(d.lectureDone) || 0}/${Number(d.lectureGoal) || 5}강`;
+
+        const timeBadge = document.createElement('span');
+        timeBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200';
+        timeBadge.textContent = formatMinutes(d.studyMinutes);
+
+        rightBadges.appendChild(lecBadge);
+        rightBadges.appendChild(timeBadge);
+        topRow.appendChild(dateEl);
+        topRow.appendChild(rightBadges);
+        card.appendChild(topRow);
+
+        const evalRow = document.createElement('div');
+        evalRow.className = 'flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 dark:text-slate-300';
+        const gText = `👍 ${Number(d.goodScore) || 0}/5${d.goodReason ? ' · ' + d.goodReason : ''}`;
+        const bText = `👎 ${Number(d.badScore) || 0}/5${d.badReason ? ' · ' + d.badReason : ''}`;
+
+        const gSpan = document.createElement('span');
+        gSpan.className = 'truncate max-w-full';
+        gSpan.textContent = gText;
+        evalRow.appendChild(gSpan);
+
+        if ((Number(d.badScore) || 0) > 0 || d.badReason) {
+          const bSpan = document.createElement('span');
+          bSpan.className = 'truncate max-w-full text-rose-500 dark:text-rose-400';
+          bSpan.textContent = bText;
+          evalRow.appendChild(bSpan);
+        }
+        card.appendChild(evalRow);
+
+        if (Array.isArray(d.foods) && d.foods.length > 0) {
+          const foodRow = document.createElement('div');
+          foodRow.className = 'text-[11px] text-amber-700 dark:text-amber-300 truncate';
+          foodRow.textContent = `🍽️ ${d.foods.join(', ')}`;
+          card.appendChild(foodRow);
+        }
+
+        card.addEventListener('click', () => {
+          currentDateStr = dStr;
+          renderTodayAll();
+          applyTab('today');
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
     function renderNoticeHistory() {
       const list = document.getElementById('noticeHistoryList');
       const notices = appState.notices || [];
@@ -859,13 +1207,20 @@
       });
     }
 
-    function renderAll() {
+    function renderTodayAll() {
       renderNotice();
       renderDateBar();
       renderLectures();
       renderStudyTime();
       renderEvaluation();
       renderFoods();
+    }
+
+    function renderAll() {
+      renderTodayAll();
+      if (activeTab === 'monthly') {
+        renderMonthly();
+      }
     }
 
     // --- Firebase 모달 제어 ---
@@ -906,11 +1261,15 @@
       localStorage.setItem(FB_SETTINGS_KEY, JSON.stringify(fbSettings));
       loadLocalState();
       renderAll();
-      await connectFirebase();
+      const ok = await connectFirebase();
 
       document.getElementById('btnDisconnectFirebase').classList.remove('hidden');
       document.getElementById('btnCopyShareLink').classList.remove('hidden');
-      showFbMsg(`방 '${roomVal}' 연결을 시작했습니다!`);
+      if (ok) {
+        showFbMsg(`방 '${roomVal}' 연결 완료!`);
+      } else {
+        showFbMsg('연결에 실패했습니다. Firebase 규칙(.read/.write)을 확인해 주세요.', true);
+      }
     });
 
     document.getElementById('btnDisconnectFirebase').addEventListener('click', async () => {
@@ -930,7 +1289,7 @@
       const shareUrl = `${base}?db=${encodeURIComponent(fbSettings.databaseURL)}&room=${encodeURIComponent(fbSettings.roomId)}`;
       try {
         await navigator.clipboard.writeText(shareUrl);
-        showFbMsg('링크가 복사되었습니다! 친구에게 보내면 클릭 한 번에 바로 연결됩니다.');
+        showFbMsg('링크가 복사되었습니다! 친구에게 보내면 바로 연결됩니다.');
       } catch (e) {
         prompt('아래 링크를 복사해 친구에게 보내세요:', shareUrl);
       }
@@ -960,12 +1319,12 @@
       applyTheme(!document.documentElement.classList.contains('dark'));
     });
 
-    // 공지 터치 시 멈춤/재생 토글
-    document.getElementById('marqueeWrap').addEventListener('click', () => {
-      if (!appState.notices || appState.notices.length === 0) return;
-      isMarqueePaused = !isMarqueePaused;
-      document.getElementById('marqueeTrack').classList.toggle('paused', isMarqueePaused);
-    });
+    document.getElementById('tabTodayView').addEventListener('click', () => applyTab('today'));
+    document.getElementById('tabMonthlyView').addEventListener('click', () => applyTab('monthly'));
+
+    // 공지 터치 / 버튼으로 멈춤·재생 토글
+    document.getElementById('marqueeWrap').addEventListener('click', toggleMarqueePause);
+    document.getElementById('btnNoticePauseToggle').addEventListener('click', toggleMarqueePause);
 
     // 공지 쓰기 모달
     document.getElementById('btnOpenNoticeWrite').addEventListener('click', () => {
@@ -1010,15 +1369,29 @@
     // 날짜 이동
     document.getElementById('btnPrevDate').addEventListener('click', () => {
       currentDateStr = shiftDate(currentDateStr, -1);
-      renderAll();
+      renderTodayAll();
     });
     document.getElementById('btnNextDate').addEventListener('click', () => {
       currentDateStr = shiftDate(currentDateStr, 1);
-      renderAll();
+      renderTodayAll();
     });
     document.getElementById('btnToday').addEventListener('click', () => {
       currentDateStr = getTodayStr();
-      renderAll();
+      renderTodayAll();
+    });
+
+    // 월별 이동
+    document.getElementById('btnPrevMonth').addEventListener('click', () => {
+      currentMonthStr = shiftMonth(currentMonthStr, -1);
+      renderMonthly();
+    });
+    document.getElementById('btnNextMonth').addEventListener('click', () => {
+      currentMonthStr = shiftMonth(currentMonthStr, 1);
+      renderMonthly();
+    });
+    document.getElementById('btnThisMonth').addEventListener('click', () => {
+      currentMonthStr = getTodayStr().slice(0, 7);
+      renderMonthly();
     });
 
     // 목표 강의 수 조절
@@ -1141,7 +1514,8 @@
     initTheme();
     loadFirebaseSettings();
     loadLocalState();
-    renderAll();
+    renderTodayAll();
+    applyTab(activeTab);
     connectFirebase();
   </script>
 </body>
