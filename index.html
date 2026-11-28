@@ -603,8 +603,11 @@
     let activeTab = localStorage.getItem(TAB_KEY) === 'monthly' ? 'monthly' : 'today';
     let avgMode = localStorage.getItem(AVG_MODE_KEY) === 'all' ? 'all' : 'studied';
     let isMarqueePaused = false;
+    const SW_STATE_KEY = 'study_raccoon_stopwatch';
     let swTimer = null;
-    let swElapsedSec = 0;
+    let swRunning = false;
+    let swStartTime = null;
+    let swAccumulatedMs = 0;
     let reasonDebounce = null;
     let lastRenderedNoticeText = '';
 
@@ -1705,24 +1708,115 @@
       }
     });
 
-    // --- 스톱워치 ---
+    // --- 스톱워치 (Date.now() 기준 백그라운드/화면꺼짐 대응 + 로컬 저장) ---
+    function getSwElapsedMs() {
+      return swAccumulatedMs + (swRunning && swStartTime ? Math.max(0, Date.now() - swStartTime) : 0);
+    }
+
+    function getSwElapsedSec() {
+      return Math.floor(getSwElapsedMs() / 1000);
+    }
+
+    function saveSwState() {
+      localStorage.setItem(SW_STATE_KEY, JSON.stringify({
+        running: swRunning,
+        startTime: swStartTime,
+        accumulatedMs: swAccumulatedMs
+      }));
+    }
+
     function updateSwDisplay() {
-      const h = Math.floor(swElapsedSec / 3600);
-      const m = Math.floor((swElapsedSec % 3600) / 60);
-      const s = swElapsedSec % 60;
+      const sec = getSwElapsedSec();
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
       document.getElementById('swDisplay').textContent =
         `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-    function stopStopwatch() {
+    function updateSwButtonUI() {
+      const btn = document.getElementById('btnSwToggle');
+      if (swRunning) {
+        btn.textContent = '일시정지';
+        btn.className = 'py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold tap-pop';
+      } else {
+        btn.textContent = '시작';
+        btn.className = 'py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop';
+      }
+    }
+
+    function startStopwatchLoop() {
+      if (swTimer) clearInterval(swTimer);
+      swTimer = setInterval(updateSwDisplay, 500);
+    }
+
+    function startStopwatch() {
+      if (swRunning) return;
+      swRunning = true;
+      swStartTime = Date.now();
+      saveSwState();
+      updateSwButtonUI();
+      updateSwDisplay();
+      startStopwatchLoop();
+    }
+
+    function pauseStopwatch() {
+      if (swRunning && swStartTime) {
+        swAccumulatedMs += Math.max(0, Date.now() - swStartTime);
+      }
+      swRunning = false;
+      swStartTime = null;
       if (swTimer) {
         clearInterval(swTimer);
         swTimer = null;
       }
-      const btn = document.getElementById('btnSwToggle');
-      btn.textContent = '시작';
-      btn.className = 'py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold tap-pop';
+      saveSwState();
+      updateSwButtonUI();
+      updateSwDisplay();
     }
+
+    function resetStopwatch() {
+      swRunning = false;
+      swStartTime = null;
+      swAccumulatedMs = 0;
+      if (swTimer) {
+        clearInterval(swTimer);
+        swTimer = null;
+      }
+      saveSwState();
+      updateSwButtonUI();
+      updateSwDisplay();
+    }
+
+    function initStopwatch() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SW_STATE_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          swRunning = Boolean(saved.running);
+          swStartTime = typeof saved.startTime === 'number' ? saved.startTime : null;
+          swAccumulatedMs = Math.max(0, Number(saved.accumulatedMs) || 0);
+          if (swRunning && !swStartTime) {
+            swRunning = false;
+          }
+        }
+      } catch (e) {}
+
+      updateSwButtonUI();
+      updateSwDisplay();
+
+      if (swRunning || swAccumulatedMs > 0) {
+        document.getElementById('stopwatchBox').classList.remove('hidden');
+      }
+      if (swRunning) {
+        startStopwatchLoop();
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && swRunning) {
+        updateSwDisplay();
+      }
+    });
 
     // --- 이벤트 바인딩 ---
     document.getElementById('btnThemeToggle').addEventListener('click', () => {
@@ -1859,31 +1953,22 @@
       document.getElementById('stopwatchBox').classList.toggle('hidden');
     });
     document.getElementById('btnSwToggle').addEventListener('click', () => {
-      if (swTimer) {
-        stopStopwatch();
+      if (swRunning) {
+        pauseStopwatch();
       } else {
-        swTimer = setInterval(() => {
-          swElapsedSec += 1;
-          updateSwDisplay();
-        }, 1000);
-        const btn = document.getElementById('btnSwToggle');
-        btn.textContent = '일시정지';
-        btn.className = 'py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold tap-pop';
+        startStopwatch();
       }
     });
     document.getElementById('btnSwReset').addEventListener('click', () => {
-      stopStopwatch();
-      swElapsedSec = 0;
-      updateSwDisplay();
+      resetStopwatch();
     });
     document.getElementById('btnSwApply').addEventListener('click', () => {
-      if (swElapsedSec <= 0) return;
-      const addMins = Math.max(1, Math.round(swElapsedSec / 60));
+      const elapsedSec = getSwElapsedSec();
+      if (elapsedSec <= 0) return;
+      const addMins = Math.max(1, Math.round(elapsedSec / 60));
       const day = getDayData(currentDateStr);
       day.studyMinutes = (Number(day.studyMinutes) || 0) + addMins;
-      stopStopwatch();
-      swElapsedSec = 0;
-      updateSwDisplay();
+      resetStopwatch();
       saveState();
       renderStudyTime();
     });
@@ -1921,6 +2006,7 @@
     }
 
     initTheme();
+    initStopwatch();
     loadFirebaseSettings();
     loadLocalState();
     renderTodayAll();
